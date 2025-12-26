@@ -1,6 +1,7 @@
 package com.orgzly.android.ui.notes.query.agenda
 
 import com.orgzly.android.db.entity.NoteView
+import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.query.Query
 import com.orgzly.android.query.user.InternalQueryParser
 import com.orgzly.android.ui.TimeType
@@ -9,7 +10,10 @@ import com.orgzly.org.datetime.OrgInterval
 import com.orgzly.org.datetime.OrgRange
 import org.joda.time.DateTime
 
-class AgendaItems(private val hideEmptyDaysInAgenda : Boolean) {
+class AgendaItems(
+    private val hideEmptyDaysInAgenda : Boolean,
+    private val groupScheduledWithToday : Boolean) {
+
     data class ExpandableOrgRange(
             val range: OrgRange,
             val canBeOverdueToday: Boolean,
@@ -90,9 +94,11 @@ class AgendaItems(private val hideEmptyDaysInAgenda : Boolean) {
             val times = AgendaUtils.expandOrgDateTime(expandable, now, agendaDays)
 
             if (times.isOverdueToday) {
-                when (timeType) {
-                    TimeType.SCHEDULED -> dailyNotes[now.millis]?.add(AgendaItem.Note(agendaItemId, note, timeType))
-                    else -> overdueNotes.add(AgendaItem.Note(agendaItemId, note, timeType))
+                if (timeType == TimeType.SCHEDULED && groupScheduledWithToday) {
+                    dailyNotes[now.millis]?.add(
+                        AgendaItem.Note(agendaItemId, note, timeType))
+                } else {
+                    overdueNotes.add(AgendaItem.Note(agendaItemId, note, timeType))
                 }
                 item2databaseIds[agendaItemId] = note.note.id
                 agendaItemId++
