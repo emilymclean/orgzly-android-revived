@@ -127,6 +127,8 @@ android {
 dependencies {
     implementation orgJavaLocation()
 
+    lintChecks(project(":lint"))
+
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$versions.kotlin_coroutines"
 
     implementation "org.jetbrains:annotations:$versions.jetbrains_annotations"
