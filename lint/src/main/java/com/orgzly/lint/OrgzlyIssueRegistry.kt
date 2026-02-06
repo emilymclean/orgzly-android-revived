@@ -15,7 +15,7 @@ class OrgzlyIssueRegistry : IssueRegistry() {
 
     override val api: Int = CURRENT_API
 
-    override val minApi: Int = 21
+    override val minApi: Int = 8
 
     override val vendor: Vendor = Vendor(
         vendorName = "Orgzly",

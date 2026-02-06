@@ -5,13 +5,12 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
 }
 
 lint {
     htmlReport = true
-    htmlOutput = file("lint-report.html")
     textReport = true
     absolutePaths = false
     ignoreTestSources = true
@@ -22,4 +21,16 @@ dependencies {
 
     // For a description of the below dependencies, see the main project README
     compileOnly("com.android.tools.lint:lint-api:${versions["lint"]}")
+    compileOnly("com.android.tools.lint:lint-checks:${versions["lint"]}")
+
+    testImplementation("junit:junit:${versions["junit"]}")
+    testImplementation("com.android.tools.lint:lint:${versions["lint"]}")
+    testImplementation("com.android.tools.lint:lint-tests:${versions["lint"]}")
+    testImplementation("com.android.tools:testutils:${versions["lint"]}")
+}
+
+tasks.jar {
+    manifest {
+        attributes["Lint-Registry-v2"] = "com.orgzly.lint.OrgzlyIssueRegistry"
+    }
 }

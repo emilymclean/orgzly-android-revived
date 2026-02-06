@@ -24,7 +24,7 @@ class ComposeButtonDetector : Detector(), SourceCodeScanner {
                 
                 The `OrgzlyButton` provides a standardized interface that aligns with the \
                 app's design system and makes it easier to maintain UI consistency.
-            """.trimIndent(),
+            """,
             category = Category.CORRECTNESS,
             priority = 6,
             severity = Severity.WARNING,
@@ -55,7 +55,7 @@ class ComposeButtonDetector : Detector(), SourceCodeScanner {
         )
     }
 
-    private fun createQuickFix(node: UCallExpression): LintFix? {
+    private fun createQuickFix(node: UCallExpression): LintFix {
         val callText = node.asSourceString()
 
         // Simple replacement: Button -> OrgzlyButton
