@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -30,12 +29,15 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
         private const val ARG_ID: String = "id"
 
         /** Name used for [android.app.FragmentManager].  */
+        @JvmField
         val FRAGMENT_TAG: String = SavedSearchFragment::class.java.getName()
 
+        @JvmStatic
         fun getInstance(): SavedSearchFragment {
             return SavedSearchFragment()
         }
 
+        @JvmStatic
         fun getInstance(id: Long): SavedSearchFragment {
             val fragment = SavedSearchFragment()
             val args = Bundle()
