@@ -1,9 +1,20 @@
-package com.orgzly.android.query
+package com.orgzly.android.query.user
 
+import com.orgzly.android.query.Condition
+import com.orgzly.android.query.Options
+import com.orgzly.android.query.Query
+import com.orgzly.android.query.QueryInterval
+import com.orgzly.android.query.QueryTokenizer
+import com.orgzly.android.query.Relation
+import com.orgzly.android.query.RelativeDateOption
+import com.orgzly.android.query.SimpleFilter
+import com.orgzly.android.query.SimpleFilterAndSearch
+import com.orgzly.android.query.SimpleFilterBuilder
 import javax.inject.Inject
+import kotlin.collections.forEach
 
 
-class SimpleFilterParser @Inject constructor() {
+class SimpleFilterMapper @Inject constructor() {
 
     fun fromQuery(query: Query): SimpleFilterAndSearch {
         val result = SimpleFilterBuilder()
@@ -193,7 +204,7 @@ class SimpleFilterParser @Inject constructor() {
                     val tokenizer = QueryTokenizer(it, "(", ")")
 
                     tokenizer.tokens.map {
-                        val unquoted = QueryTokenizer.unquote(it)
+                        val unquoted = QueryTokenizer.Companion.unquote(it)
                         Condition.HasText(
                             unquoted,
                             unquoted == it

@@ -1,5 +1,6 @@
 package com.orgzly.android.ui.savedsearch
 
+import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Immutable
@@ -7,9 +8,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.orgzly.android.data.DataRepository
-import com.orgzly.android.query.QueryParser
 import com.orgzly.android.query.SimpleFilter
-import com.orgzly.android.query.SimpleFilterParser
+import com.orgzly.android.query.user.SimpleFilterMapper
+import com.orgzly.android.query.user.InternalQueryBuilder
 import com.orgzly.android.query.user.InternalQueryParser
 import com.orgzly.android.ui.CommonViewModel
 import dagger.assisted.Assisted
@@ -42,12 +43,15 @@ data class SavedSearchModel(
 
 class SavedSearchViewModel @AssistedInject constructor(
     private val dataRepository: DataRepository,
-    private val simpleFilterParser: SimpleFilterParser,
-    private val queryParser: QueryParser = InternalQueryParser(),
+    private val simpleFilterMapper: SimpleFilterMapper,
+    private val queryParser: InternalQueryParser,
+    private val queryBuilder: InternalQueryBuilder,
     @Assisted private val existingSearchId: Long?
 ): CommonViewModel() {
 
     companion object {
+        val TAG = SavedSearchViewModel::class.java.name
+
         fun provideFactory(
             assistedFactory: Factory,
             existingSearchId: Long?
@@ -95,7 +99,7 @@ class SavedSearchViewModel @AssistedInject constructor(
                 nameField.setTextAndPlaceCursorAtEnd(existing.name)
 
                 try {
-                    val parsed = simpleFilterParser.fromQuery(
+                    val parsed = simpleFilterMapper.fromQuery(
                         queryParser.parse(existing.query)
                     )
                     currentSimpleFilter.value = parsed.filter
@@ -109,10 +113,29 @@ class SavedSearchViewModel @AssistedInject constructor(
     }
 
     fun switchSearchStyle() {
-        if (isSimpleSearch.value) {
-
-        } else {
-
+        val isSimpleSearch = isSimpleSearch.value
+        when (isSimpleSearch) {
+            true -> {
+                advancedQueryField.setTextAndPlaceCursorAtEnd(
+                    queryBuilder.build(simpleFilterMapper.toQuery(
+                        simpleSearchField.text.toString(),
+                        currentSimpleFilter.value
+                    ))
+                )
+                this.isSimpleSearch.value = false
+            }
+            else -> {
+                try {
+                    val parsed = simpleFilterMapper.fromQuery(
+                        queryParser.parse(advancedQueryField.text.toString())
+                    )
+                    currentSimpleFilter.value = parsed.filter
+                    simpleSearchField.setTextAndPlaceCursorAtEnd(parsed.search)
+                    this.isSimpleSearch.value = true
+                } catch (e: Exception) {
+                    Log.e(TAG, "Cannot swap to simple search", e)
+                }
+            }
         }
     }
 

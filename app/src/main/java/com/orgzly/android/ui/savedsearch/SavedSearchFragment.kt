@@ -2,14 +2,25 @@ package com.orgzly.android.ui.savedsearch
 
 import android.content.Context
 import android.os.Bundle
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
+import com.orgzly.R
 import com.orgzly.android.App
 import com.orgzly.android.db.entity.SavedSearch
 import com.orgzly.android.ui.compose.base.ComposeFragment
+import com.orgzly.android.ui.compose.widgets.OrgzlyTopAppBar
 import com.orgzly.android.ui.drawer.DrawerItem
 import com.orgzly.android.ui.main.SharedMainActivityViewModel
 import com.orgzly.android.ui.savedsearches.SavedSearchesFragment
+import javax.inject.Inject
 
 class SavedSearchFragment: ComposeFragment(), DrawerItem {
 
@@ -38,11 +49,32 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
     }
 
     private lateinit var sharedMainActivityViewModel: SharedMainActivityViewModel
+    @Inject lateinit var factory: SavedSearchViewModel.Factory
+    private val viewModel: SavedSearchViewModel by viewModels {
+        SavedSearchViewModel.provideFactory(
+            factory,
+            arguments?.getLong(ARG_ID, -1)?.takeIf { it >= 0 }
+        )
+    }
+
     private var mListener: Listener? = null
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Composable
     override fun Content() {
+        Scaffold(
+            topBar = {
+                OrgzlyTopAppBar(
+                    stringResource(R.string.search)
+                )
+            }
+        ) { contentPadding ->
+            Column(
+                Modifier.padding(contentPadding)
+            ) {
 
+            }
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
