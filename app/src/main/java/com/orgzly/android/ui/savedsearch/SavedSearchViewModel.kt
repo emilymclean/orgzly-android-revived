@@ -6,6 +6,8 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.asFlow
+import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.orgzly.android.data.DataRepository
 import com.orgzly.android.query.SimpleFilter
@@ -20,13 +22,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Immutable
 data class SavedSearchModel(
-    val mode: Mode = Mode.Simple(SimpleFilter())
+    val mode: Mode = Mode.Simple(SimpleFilter()),
+    val allTags: List<String> = emptyList(),
+    val allBooks: List<String> = emptyList()
 ) {
 
     sealed interface Mode {
@@ -34,7 +40,7 @@ data class SavedSearchModel(
         data object Advanced: Mode
 
         data class Simple(
-            val filter: SimpleFilter
+            val filter: SimpleFilter,
         ): Mode
 
     }
@@ -71,17 +77,31 @@ class SavedSearchViewModel @AssistedInject constructor(
     val advancedQueryField = TextFieldState()
     val simpleSearchField = TextFieldState()
 
+    private val tags = dataRepository.selectAllTagsLiveData().asFlow()
+    private val books = dataRepository.getBooksLiveData().asFlow().mapLatest {
+        it.map { it.book.name }
+    }
+
     val mode = combine(
         isSimpleSearch,
-        currentSimpleFilter
-    ) { isSimpleSearch, currentSimpleFilter ->
+        currentSimpleFilter,
+        tags,
+        books,
+    ) {
+        isSimpleSearch,
+        currentSimpleFilter,
+        tags,
+        books ->
+
         SavedSearchModel(
             when (isSimpleSearch) {
                 true -> SavedSearchModel.Mode.Simple(
                     currentSimpleFilter
                 )
                 else -> SavedSearchModel.Mode.Advanced
-            }
+            },
+            tags,
+            books
         )
     }.stateIn(
         viewModelScope,
@@ -113,8 +133,7 @@ class SavedSearchViewModel @AssistedInject constructor(
     }
 
     fun switchSearchStyle() {
-        val isSimpleSearch = isSimpleSearch.value
-        when (isSimpleSearch) {
+        when (isSimpleSearch.value) {
             true -> {
                 advancedQueryField.setTextAndPlaceCursorAtEnd(
                     queryBuilder.build(simpleFilterMapper.toQuery(
@@ -122,7 +141,7 @@ class SavedSearchViewModel @AssistedInject constructor(
                         currentSimpleFilter.value
                     ))
                 )
-                this.isSimpleSearch.value = false
+                isSimpleSearch.value = false
             }
             else -> {
                 try {
@@ -131,7 +150,7 @@ class SavedSearchViewModel @AssistedInject constructor(
                     )
                     currentSimpleFilter.value = parsed.filter
                     simpleSearchField.setTextAndPlaceCursorAtEnd(parsed.search)
-                    this.isSimpleSearch.value = true
+                    isSimpleSearch.value = true
                 } catch (e: Exception) {
                     Log.e(TAG, "Cannot swap to simple search", e)
                 }

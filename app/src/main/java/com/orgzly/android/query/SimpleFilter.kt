@@ -11,15 +11,11 @@ data class SimpleQuery(
 data class SimpleFilter(
     val books: Set<String> = emptySet(),
 
-    val states: Set<String> = emptySet(),
-    val stateTypes: Set<StateType> = emptySet(),
     val excludeDone: Boolean = true,
 
-    val priorities: Set<String> = emptySet(),
-    val setPriorities: Set<String> = emptySet(),
+    val priority: String? = null,
 
     val tags: Set<String> = emptySet(),
-    val ownTags: Set<String> = emptySet(),
 
     val event: RelativeDateOption? = null,
     val scheduled: RelativeDateOption? = null,
@@ -27,22 +23,20 @@ data class SimpleFilter(
     val closed: RelativeDateOption? = null,
     val created: RelativeDateOption? = null,
 
-    val sortOrder: SortOrder? = null,
+    val sortOrder: SimpleSortOrder = SimpleSortOrder.DEFAULT,
+    val sortDescending: Boolean = true,
+
     val isAgenda: Boolean = true
 )
 
 data class SimpleFilterBuilder(
     val books: MutableSet<String> = mutableSetOf(),
 
-    val states: MutableSet<String> = mutableSetOf(),
-    val stateTypes: MutableSet<StateType> = mutableSetOf(),
     var excludeDone: Boolean = true,
 
-    val priorities: MutableSet<String> = mutableSetOf(),
-    val setPriorities: MutableSet<String> = mutableSetOf(),
+    var priority: String? = null,
 
     val tags: MutableSet<String> = mutableSetOf(),
-    val ownTags: MutableSet<String> = mutableSetOf(),
 
     var event: RelativeDateOption? = null,
     var scheduled: RelativeDateOption? = null,
@@ -50,24 +44,23 @@ data class SimpleFilterBuilder(
     var closed: RelativeDateOption? = null,
     var created: RelativeDateOption? = null,
 
-    var sortOrder: SortOrder? = null,
+    var sortOrder: SimpleSortOrder = SimpleSortOrder.DEFAULT,
+    var sortDescending: Boolean = true,
+
     var isAgenda: Boolean = true
 ) {
     fun build(): SimpleFilter = SimpleFilter(
         books = books.toSet(),
-        states = states.toSet(),
-        stateTypes = stateTypes.toSet(),
         excludeDone = excludeDone,
-        priorities = priorities.toSet(),
-        setPriorities = setPriorities.toSet(),
+        priority = priority,
         tags = tags.toSet(),
-        ownTags = ownTags.toSet(),
         event = event,
         scheduled = scheduled,
         deadline = deadline,
         closed = closed,
         created = created,
         sortOrder = sortOrder,
+        sortDescending = sortDescending,
         isAgenda = isAgenda
     )
 }
@@ -87,4 +80,17 @@ enum class RelativeDateOption {
 
     NEXT_7_DAYS,
     NEXT_30_DAYS
+}
+
+enum class SimpleSortOrder {
+    DEFAULT,
+    BOOK,
+    TITLE,
+    SCHEDULED,
+    DEADLINE,
+    EVENT,
+    CLOSED,
+    CREATED,
+    PRIORITY,
+    STATE
 }

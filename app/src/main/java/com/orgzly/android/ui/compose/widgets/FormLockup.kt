@@ -65,12 +65,11 @@ fun HorizontalFormLockup(
         horizontalArrangement = Arrangement.spacedBy(0.5.rdp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        content()
         FormLockupTitle(
             title,
-            subtitle,
-            modifier = Modifier.weight(1f)
+            subtitle
         )
-        content()
     }
 }
 

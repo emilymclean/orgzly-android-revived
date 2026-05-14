@@ -126,7 +126,9 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                             )
                             SearchFilterWidget(
                                 mode.filter,
-                                viewModel::updateFilter
+                                viewModel::updateFilter,
+                                state.allTags,
+                                state.allBooks
                             )
                         }
                     }

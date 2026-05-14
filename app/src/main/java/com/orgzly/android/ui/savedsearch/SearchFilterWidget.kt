@@ -1,21 +1,46 @@
 package com.orgzly.android.ui.savedsearch
 
+import androidx.annotation.StringRes
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
 import cl.emilym.compose.units.rdp
 import com.orgzly.R
 import com.orgzly.android.query.SimpleFilter
-import com.orgzly.android.query.StateType
+import com.orgzly.android.query.SimpleSortOrder
+import com.orgzly.android.ui.compose.modifiers.noRippleClickable
 import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
+import com.orgzly.android.ui.compose.widgets.CollapsePanel
+import com.orgzly.android.ui.compose.widgets.Icons
+import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
+import com.orgzly.android.ui.compose.widgets.painterIcon
 
 @Composable
 fun SearchFilterWidget(
     filter: SimpleFilter,
     onChange: (SimpleFilter) -> Unit,
+    allTags: List<String>,
+    allBooks: List<String>,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -27,11 +52,7 @@ fun SearchFilterWidget(
             {
                 onChange(
                     filter.copy(
-                        excludeDone = it,
-                        stateTypes = when (it) {
-                            true -> filter.stateTypes.filter { it != StateType.DONE }.toSet()
-                            else -> filter.stateTypes
-                        }
+                        excludeDone = it
                     )
                 )
             },
@@ -39,6 +60,155 @@ fun SearchFilterWidget(
             modifier = Modifier.fillMaxWidth()
         )
 
+        SortOrder(
+            filter.sortOrder,
+            filter.sortDescending,
+            { sortOrder, descending ->
+                onChange(
+                    filter.copy(
+                        sortOrder = sortOrder,
+                        sortDescending = descending
+                    )
+                )
+            }
+        )
 
+        if (allBooks.size > 1) {
+            BookFilter(
+                filter.books,
+                { onChange(
+                    filter.copy(
+                        books = it
+                    )
+                ) },
+                allBooks
+            )
+        }
+    }
+}
+
+private data class SimpleSortOrderEntry(
+    val sortOrder: SimpleSortOrder,
+    @field:StringRes
+    val label: Int
+)
+
+private val sortOrderEntries = listOf(
+    SimpleSortOrderEntry(
+        SimpleSortOrder.DEFAULT,
+        R.string.search_filter_default_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.BOOK,
+        R.string.search_filter_book_sort_order
+    )
+)
+
+@Composable
+private fun SortOrder(
+    sortOrder: SimpleSortOrder,
+    descending: Boolean,
+    onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit
+) {
+    Column {
+        Text(
+            stringResource(R.string.sort_order),
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        for (entry in sortOrderEntries) {
+            SortOrderEntry(
+                entry,
+                sortOrder,
+                descending,
+                onSortOrderChange
+            )
+        }
+    }
+}
+
+@Composable
+private fun SortOrderEntry(
+    entry: SimpleSortOrderEntry,
+    sortOrder: SimpleSortOrder,
+    descending: Boolean,
+    onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit
+) {
+    val callback = remember(onSortOrderChange) { {
+        onSortOrderChange(
+            entry.sortOrder,
+            when (entry.sortOrder == sortOrder) {
+                true -> !descending
+                else -> descending
+            }
+        )
+    } }
+
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        RadioButtonFormLockup(
+            entry.sortOrder == sortOrder,
+            callback,
+            stringResource(entry.label),
+            modifier = Modifier
+                .weight(1f)
+                .animateContentSize()
+        )
+
+        if (entry.sortOrder == sortOrder) {
+            val rotationAnimation by animateFloatAsState(
+                when (descending) {
+                    true -> 0f
+                    else -> 180f
+                }
+            )
+            Icon(
+                painterIcon(
+                    Icons.ARROW_DOWNWARD
+                ),
+                modifier = Modifier
+                    .noRippleClickable(onClick = callback)
+                    .rotate(rotationAnimation),
+                contentDescription = null
+            )
+        }
+    }
+}
+
+@Composable
+private fun BookFilter(
+    books: Set<String>,
+    onBooksChange: (Set<String>) -> Unit,
+    allBooks: List<String>
+) {
+    var collapsed by remember { mutableStateOf(true) }
+    CollapsePanel(
+        stringResource(R.string.notebooks),
+        collapsed,
+        { collapsed = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            Modifier.padding(1.rdp)
+        ) {
+            for (book in allBooks) {
+                CheckboxFormLockup(
+                    books.contains(book),
+                    onCheckedChange = {
+                        onBooksChange(
+                            when (it) {
+                                true -> books + book
+                                else -> books.filterNot {
+                                    it == book
+                                }.toSet()
+                            }
+                        )
+                    },
+                    book,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
     }
 }

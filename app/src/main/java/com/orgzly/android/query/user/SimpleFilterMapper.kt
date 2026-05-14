@@ -10,6 +10,8 @@ import com.orgzly.android.query.RelativeDateOption
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.SimpleQuery
 import com.orgzly.android.query.SimpleFilterBuilder
+import com.orgzly.android.query.SimpleSortOrder
+import com.orgzly.android.query.SortOrder
 import com.orgzly.android.query.StateType
 import javax.inject.Inject
 import kotlin.collections.forEach
@@ -29,11 +31,30 @@ class SimpleFilterMapper @Inject constructor() {
             } ?: ""
 
         flattenedConditions?.let {
-            rejectIf(it.count { it is Condition.Event } > 1)
-            rejectIf(it.count { it is Condition.Scheduled } > 1)
-            rejectIf(it.count { it is Condition.Deadline } > 1)
-            rejectIf(it.count { it is Condition.Closed } > 1)
-            rejectIf(it.count { it is Condition.Created } > 1)
+            rejectIf(
+                it.count { it is Condition.Event } > 1,
+                "Cannot have greater than 1 Condition.Event"
+            )
+            rejectIf(
+                it.count { it is Condition.Scheduled } > 1,
+                "Cannot have greater than 1 Condition.Scheduled"
+            )
+            rejectIf(
+                it.count { it is Condition.Deadline } > 1,
+                "Cannot have greater than 1 Condition.Deadline"
+            )
+            rejectIf(
+                it.count { it is Condition.Closed } > 1,
+                "Cannot have greater than 1 Condition.Closed"
+            )
+            rejectIf(
+                it.count { it is Condition.Created } > 1,
+                "Cannot have greater than 1 Condition.Created"
+            )
+            rejectIf(
+                it.count { it is Condition.HasPriority } > 1,
+                "Cannot have greater than 1 Condition.HasPriority"
+            )
         }
 
         flattenedConditions?.forEach { c ->
@@ -44,27 +65,24 @@ class SimpleFilterMapper @Inject constructor() {
                 }
 
                 is Condition.HasState -> {
-                    rejectIf(c.not)
-                    result.states += c.state
+                    rejectIf(true, "Cannot have non type states")
                 }
 
                 is Condition.HasStateType -> {
                     if (c.type == StateType.DONE && c.not) {
                         result.excludeDone = true
                     } else {
-                        rejectIf(c.not)
-                        result.stateTypes += c.type
+                        rejectIf(true, "Cannot have non \".it.done\" state types")
                     }
                 }
 
                 is Condition.HasPriority -> {
                     rejectIf(c.not)
-                    result.priorities += c.priority
+                    result.priority = c.priority
                 }
 
                 is Condition.HasSetPriority -> {
-                    rejectIf(c.not)
-                    result.setPriorities += c.priority
+                    rejectIf(true, "Cannot have set priorities")
                 }
 
                 is Condition.HasTag -> {
@@ -73,8 +91,7 @@ class SimpleFilterMapper @Inject constructor() {
                 }
 
                 is Condition.HasOwnTag -> {
-                    rejectIf(c.not)
-                    result.ownTags += c.tag
+                    rejectIf(true, "Cannot have own tags")
                 }
 
                 is Condition.Event -> {
@@ -120,18 +137,6 @@ class SimpleFilterMapper @Inject constructor() {
                     }
                 )
 
-                addAll(
-                    filter.states.map {
-                        Condition.HasState(it)
-                    }
-                )
-
-                addAll(
-                    filter.stateTypes.map {
-                        Condition.HasStateType(it)
-                    }
-                )
-
                 if (filter.excludeDone) {
                     add(
                         Condition.HasStateType(
@@ -141,27 +146,13 @@ class SimpleFilterMapper @Inject constructor() {
                     )
                 }
 
-                addAll(
-                    filter.priorities.map {
-                        Condition.HasPriority(it)
-                    }
-                )
-
-                addAll(
-                    filter.setPriorities.map {
-                        Condition.HasSetPriority(it)
-                    }
-                )
+                filter.priority?.let {
+                    add(Condition.HasPriority(it))
+                }
 
                 addAll(
                     filter.tags.map {
                         Condition.HasTag(it)
-                    }
-                )
-
-                addAll(
-                    filter.ownTags.map {
-                        Condition.HasOwnTag(it)
                     }
                 )
 
@@ -223,90 +214,90 @@ class SimpleFilterMapper @Inject constructor() {
                 }
             }
         ),
-        listOfNotNull(filter.sortOrder),
+        listOfNotNull(mapSimpleSortOrder(filter.sortOrder, filter.sortDescending)),
         Options(
             agendaDays = if (filter.isAgenda) 3 else 0
         )
     )
 
-    private fun flattenCondition(condition: Condition): List<Condition> =
-        when (condition) {
-            is Condition.And ->
-                condition.operands.flatMap(::flattenCondition)
-
-            is Condition.Or ->
-                throw UnsupportedSimpleFilterException(
-                    "OR conditions are unsupported"
-                )
-
-            else ->
-                listOf(condition)
-        }
-
-    private fun RelativeDateOption.toInterval(): QueryInterval =
-        when (this) {
-            RelativeDateOption.FUTURE ->
-                QueryInterval(QueryInterval.Unit.DAY)
-
-            RelativeDateOption.PAST ->
-                QueryInterval(QueryInterval.Unit.DAY)
-
-            RelativeDateOption.TODAY ->
-                QueryInterval(QueryInterval.Unit.DAY, 0)
-
-            RelativeDateOption.YESTERDAY ->
-                QueryInterval(QueryInterval.Unit.DAY, -1)
-
-            RelativeDateOption.TOMORROW ->
-                QueryInterval(QueryInterval.Unit.DAY, 1)
-
-            RelativeDateOption.LAST_7_DAYS ->
-                QueryInterval(QueryInterval.Unit.DAY, -7)
-
-            RelativeDateOption.LAST_30_DAYS ->
-                QueryInterval(QueryInterval.Unit.DAY, -30)
-
-            RelativeDateOption.NEXT_7_DAYS ->
-                QueryInterval(QueryInterval.Unit.DAY, 7)
-
-            RelativeDateOption.NEXT_30_DAYS ->
-                QueryInterval(QueryInterval.Unit.DAY, 30)
-        }
-
-    private fun RelativeDateOption.toRelation(): Relation =
-        when (this) {
-            RelativeDateOption.FUTURE ->
-                Relation.GE
-
-            RelativeDateOption.PAST ->
-                Relation.LT
-
-            RelativeDateOption.TODAY ->
-                Relation.EQ
-
-            RelativeDateOption.YESTERDAY ->
-                Relation.EQ
-
-            RelativeDateOption.TOMORROW ->
-                Relation.EQ
-
-            RelativeDateOption.LAST_7_DAYS,
-            RelativeDateOption.LAST_30_DAYS ->
-                Relation.GE
-
-            RelativeDateOption.NEXT_7_DAYS,
-            RelativeDateOption.NEXT_30_DAYS ->
-                Relation.LE
-        }
-
-    private fun rejectIf(value: Boolean) {
+    private fun rejectIf(value: Boolean, explanation: String? = null) {
         if (value) {
             throw UnsupportedSimpleFilterException(
-                "NOT conditions are unsupported"
+                explanation ?: "NOT conditions are unsupported"
             )
         }
     }
 }
+
+private fun flattenCondition(condition: Condition): List<Condition> =
+    when (condition) {
+        is Condition.And ->
+            condition.operands.flatMap(::flattenCondition)
+
+        is Condition.Or ->
+            throw UnsupportedSimpleFilterException(
+                "OR conditions are unsupported"
+            )
+
+        else ->
+            listOf(condition)
+    }
+
+private fun RelativeDateOption.toInterval(): QueryInterval =
+    when (this) {
+        RelativeDateOption.FUTURE ->
+            QueryInterval(QueryInterval.Unit.DAY)
+
+        RelativeDateOption.PAST ->
+            QueryInterval(QueryInterval.Unit.DAY)
+
+        RelativeDateOption.TODAY ->
+            QueryInterval(QueryInterval.Unit.DAY, 0)
+
+        RelativeDateOption.YESTERDAY ->
+            QueryInterval(QueryInterval.Unit.DAY, -1)
+
+        RelativeDateOption.TOMORROW ->
+            QueryInterval(QueryInterval.Unit.DAY, 1)
+
+        RelativeDateOption.LAST_7_DAYS ->
+            QueryInterval(QueryInterval.Unit.DAY, -7)
+
+        RelativeDateOption.LAST_30_DAYS ->
+            QueryInterval(QueryInterval.Unit.DAY, -30)
+
+        RelativeDateOption.NEXT_7_DAYS ->
+            QueryInterval(QueryInterval.Unit.DAY, 7)
+
+        RelativeDateOption.NEXT_30_DAYS ->
+            QueryInterval(QueryInterval.Unit.DAY, 30)
+    }
+
+private fun RelativeDateOption.toRelation(): Relation =
+    when (this) {
+        RelativeDateOption.FUTURE ->
+            Relation.GE
+
+        RelativeDateOption.PAST ->
+            Relation.LT
+
+        RelativeDateOption.TODAY ->
+            Relation.EQ
+
+        RelativeDateOption.YESTERDAY ->
+            Relation.EQ
+
+        RelativeDateOption.TOMORROW ->
+            Relation.EQ
+
+        RelativeDateOption.LAST_7_DAYS,
+        RelativeDateOption.LAST_30_DAYS ->
+            Relation.GE
+
+        RelativeDateOption.NEXT_7_DAYS,
+        RelativeDateOption.NEXT_30_DAYS ->
+            Relation.LE
+    }
 
 private fun mapDate(
     interval: QueryInterval,
@@ -357,6 +348,37 @@ private fun mapDate(
                 "Unsupported date filter: $relation $interval"
             )
     }
+}
+
+private fun mapSortOrder(sortOrder: SortOrder) = when (sortOrder) {
+    is SortOrder.Book -> SimpleSortOrder.BOOK
+    is SortOrder.Created -> SimpleSortOrder.CREATED
+    is SortOrder.Closed -> SimpleSortOrder.CLOSED
+    is SortOrder.Deadline -> SimpleSortOrder.DEADLINE
+    is SortOrder.Event -> SimpleSortOrder.EVENT
+    is SortOrder.Scheduled -> SimpleSortOrder.SCHEDULED
+    is SortOrder.Priority -> SimpleSortOrder.PRIORITY
+    is SortOrder.State -> SimpleSortOrder.STATE
+    is SortOrder.Title -> SimpleSortOrder.TITLE
+    else -> throw UnsupportedSimpleFilterException(
+        "Unsupported sort order: ${sortOrder::class.java.name}"
+    )
+}
+
+private fun mapSimpleSortOrder(
+    simpleSortOrder: SimpleSortOrder,
+    descending: Boolean
+) = when (simpleSortOrder) {
+    SimpleSortOrder.BOOK -> SortOrder.Book(descending)
+    SimpleSortOrder.CREATED -> SortOrder.Created(descending)
+    SimpleSortOrder.CLOSED -> SortOrder.Closed(descending)
+    SimpleSortOrder.DEADLINE -> SortOrder.Deadline(descending)
+    SimpleSortOrder.EVENT -> SortOrder.Event(descending)
+    SimpleSortOrder.SCHEDULED -> SortOrder.Scheduled(descending)
+    SimpleSortOrder.PRIORITY -> SortOrder.Priority(descending)
+    SimpleSortOrder.STATE -> SortOrder.State(descending)
+    SimpleSortOrder.TITLE -> SortOrder.Title(descending)
+    SimpleSortOrder.DEFAULT -> null
 }
 
 class UnsupportedSimpleFilterException(
