@@ -8,15 +8,16 @@ import com.orgzly.android.query.QueryTokenizer
 import com.orgzly.android.query.Relation
 import com.orgzly.android.query.RelativeDateOption
 import com.orgzly.android.query.SimpleFilter
-import com.orgzly.android.query.SimpleFilterAndSearch
+import com.orgzly.android.query.SimpleQuery
 import com.orgzly.android.query.SimpleFilterBuilder
+import com.orgzly.android.query.StateType
 import javax.inject.Inject
 import kotlin.collections.forEach
 
 
 class SimpleFilterMapper @Inject constructor() {
 
-    fun fromQuery(query: Query): SimpleFilterAndSearch {
+    fun fromQuery(query: Query): SimpleQuery {
         val result = SimpleFilterBuilder()
         val flattenedConditions = query.condition?.let { flattenCondition(it) }
         val search = flattenedConditions?.filterIsInstance<Condition.HasText>()
@@ -48,8 +49,12 @@ class SimpleFilterMapper @Inject constructor() {
                 }
 
                 is Condition.HasStateType -> {
-                    rejectIf(c.not)
-                    result.stateTypes += c.type
+                    if (c.type == StateType.DONE && c.not) {
+                        result.excludeDone = true
+                    } else {
+                        rejectIf(c.not)
+                        result.stateTypes += c.type
+                    }
                 }
 
                 is Condition.HasPriority -> {
@@ -92,10 +97,6 @@ class SimpleFilterMapper @Inject constructor() {
                     result.created = mapDate(c.interval, c.relation)
                 }
 
-                is Condition.HasText -> {
-
-                }
-
                 else -> {
                     throw UnsupportedSimpleFilterException(
                         "Unsupported condition: $c"
@@ -104,7 +105,7 @@ class SimpleFilterMapper @Inject constructor() {
             }
         }
 
-        return SimpleFilterAndSearch(
+        return SimpleQuery(
             search,
             result.build()
         )
@@ -130,6 +131,15 @@ class SimpleFilterMapper @Inject constructor() {
                         Condition.HasStateType(it)
                     }
                 )
+
+                if (filter.excludeDone) {
+                    add(
+                        Condition.HasStateType(
+                            StateType.DONE,
+                            true
+                        )
+                    )
+                }
 
                 addAll(
                     filter.priorities.map {
@@ -236,10 +246,10 @@ class SimpleFilterMapper @Inject constructor() {
     private fun RelativeDateOption.toInterval(): QueryInterval =
         when (this) {
             RelativeDateOption.FUTURE ->
-                QueryInterval(QueryInterval.Unit.NOW)
+                QueryInterval(QueryInterval.Unit.DAY)
 
             RelativeDateOption.PAST ->
-                QueryInterval(QueryInterval.Unit.NOW)
+                QueryInterval(QueryInterval.Unit.DAY)
 
             RelativeDateOption.TODAY ->
                 QueryInterval(QueryInterval.Unit.DAY, 0)
@@ -304,11 +314,21 @@ private fun mapDate(
 ): RelativeDateOption {
 
     return when {
-        interval.unit == QueryInterval.Unit.NOW &&
+        interval.unit == QueryInterval.Unit.DAY &&
+                interval.value == 0 &&
+                relation == Relation.EQ ->
+            RelativeDateOption.TODAY
+
+        interval.unit == QueryInterval.Unit.DAY &&
+                interval.value == 1 &&
+                relation == Relation.EQ ->
+            RelativeDateOption.TOMORROW
+
+        interval.unit == QueryInterval.Unit.DAY &&
                 relation == Relation.GE ->
             RelativeDateOption.FUTURE
 
-        interval.unit == QueryInterval.Unit.NOW &&
+        interval.unit == QueryInterval.Unit.DAY &&
                 relation == Relation.LT ->
             RelativeDateOption.PAST
 

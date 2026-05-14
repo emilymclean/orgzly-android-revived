@@ -2,9 +2,9 @@ package com.orgzly.android.query
 
 import androidx.compose.runtime.Immutable
 
-data class SimpleFilterAndSearch(
+data class SimpleQuery(
     val search: String,
-    val filter: SimpleFilter
+    val filter: SimpleFilter,
 )
 
 @Immutable
@@ -13,6 +13,7 @@ data class SimpleFilter(
 
     val states: Set<String> = emptySet(),
     val stateTypes: Set<StateType> = emptySet(),
+    val excludeDone: Boolean = true,
 
     val priorities: Set<String> = emptySet(),
     val setPriorities: Set<String> = emptySet(),
@@ -35,6 +36,7 @@ data class SimpleFilterBuilder(
 
     val states: MutableSet<String> = mutableSetOf(),
     val stateTypes: MutableSet<StateType> = mutableSetOf(),
+    var excludeDone: Boolean = true,
 
     val priorities: MutableSet<String> = mutableSetOf(),
     val setPriorities: MutableSet<String> = mutableSetOf(),
@@ -55,6 +57,7 @@ data class SimpleFilterBuilder(
         books = books.toSet(),
         states = states.toSet(),
         stateTypes = stateTypes.toSet(),
+        excludeDone = excludeDone,
         priorities = priorities.toSet(),
         setPriorities = setPriorities.toSet(),
         tags = tags.toSet(),

@@ -2,19 +2,27 @@ package com.orgzly.android.ui.savedsearch
 
 import android.content.Context
 import android.os.Bundle
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cl.emilym.compose.units.rdp
 import com.orgzly.R
 import com.orgzly.android.App
 import com.orgzly.android.db.entity.SavedSearch
 import com.orgzly.android.ui.compose.base.ComposeFragment
+import com.orgzly.android.ui.compose.widgets.BackButton
+import com.orgzly.android.ui.compose.widgets.OrgzlyTextField
 import com.orgzly.android.ui.compose.widgets.OrgzlyTopAppBar
 import com.orgzly.android.ui.drawer.DrawerItem
 import com.orgzly.android.ui.main.SharedMainActivityViewModel
@@ -67,14 +75,56 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
         Scaffold(
             topBar = {
                 OrgzlyTopAppBar(
-                    stringResource(R.string.search)
+                    stringResource(R.string.search),
+                    navigationIcon = {
+                        BackButton()
+                    }
                 )
             }
         ) { contentPadding ->
+            val state by viewModel.mode.collectAsStateWithLifecycle()
             Column(
-                Modifier.padding(contentPadding)
+                Modifier
+                    .padding(contentPadding)
+                    .padding(1.rdp),
+                verticalArrangement = Arrangement.spacedBy(
+                    1.rdp
+                )
             ) {
+                OrgzlyTextField(
+                    viewModel.nameField,
+                    Modifier.fillMaxWidth(),
+                    label = {
+                        Text(
+                            stringResource(R.string.name)
+                        )
+                    },
+                )
 
+                when (state.mode) {
+                    is SavedSearchModel.Mode.Advanced -> {
+                        OrgzlyTextField(
+                            viewModel.advancedQueryField,
+                            Modifier.fillMaxWidth(),
+                            label = {
+                                Text(
+                                    stringResource(R.string.query)
+                                )
+                            },
+                        )
+                    }
+                    else -> {
+                        OrgzlyTextField(
+                            viewModel.simpleSearchField,
+                            Modifier.fillMaxWidth(),
+                            label = {
+                                Text(
+                                    stringResource(R.string.options_menu_item_search)
+                                )
+                            },
+                        )
+                    }
+                }
             }
         }
     }
