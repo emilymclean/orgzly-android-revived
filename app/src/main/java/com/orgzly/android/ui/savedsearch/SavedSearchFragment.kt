@@ -101,28 +101,34 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                     },
                 )
 
-                when (state.mode) {
-                    is SavedSearchModel.Mode.Advanced -> {
-                        OrgzlyTextField(
-                            viewModel.advancedQueryField,
-                            Modifier.fillMaxWidth(),
-                            label = {
-                                Text(
-                                    stringResource(R.string.query)
-                                )
-                            },
-                        )
-                    }
-                    else -> {
-                        OrgzlyTextField(
-                            viewModel.simpleSearchField,
-                            Modifier.fillMaxWidth(),
-                            label = {
-                                Text(
-                                    stringResource(R.string.options_menu_item_search)
-                                )
-                            },
-                        )
+                state.mode.let { mode ->
+                    when (mode) {
+                        is SavedSearchModel.Mode.Advanced -> {
+                            OrgzlyTextField(
+                                viewModel.advancedQueryField,
+                                Modifier.fillMaxWidth(),
+                                label = {
+                                    Text(
+                                        stringResource(R.string.query)
+                                    )
+                                },
+                            )
+                        }
+                        is SavedSearchModel.Mode.Simple -> {
+                            OrgzlyTextField(
+                                viewModel.simpleSearchField,
+                                Modifier.fillMaxWidth(),
+                                label = {
+                                    Text(
+                                        stringResource(R.string.options_menu_item_search)
+                                    )
+                                },
+                            )
+                            SearchFilterWidget(
+                                mode.filter,
+                                viewModel::updateFilter
+                            )
+                        }
                     }
                 }
             }

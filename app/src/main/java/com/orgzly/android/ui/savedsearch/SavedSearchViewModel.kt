@@ -100,9 +100,7 @@ class SavedSearchViewModel @AssistedInject constructor(
 
                 try {
                     val parsed = simpleFilterMapper.fromQuery(
-                        queryParser.parse(existing.query).also {
-                            Log.d(TAG, "Query = ${it.condition}")
-                        }
+                        queryParser.parse(existing.query)
                     )
                     currentSimpleFilter.value = parsed.filter
                     simpleSearchField.setTextAndPlaceCursorAtEnd(parsed.search)
@@ -139,6 +137,10 @@ class SavedSearchViewModel @AssistedInject constructor(
                 }
             }
         }
+    }
+
+    fun updateFilter(filter: SimpleFilter) {
+        this.currentSimpleFilter.value = filter
     }
 
     @AssistedFactory
