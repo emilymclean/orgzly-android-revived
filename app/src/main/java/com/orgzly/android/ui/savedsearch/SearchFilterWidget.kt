@@ -563,7 +563,7 @@ private fun StateFilter(
 
     var collapsed by remember { mutableStateOf(true) }
     FilterCollapsePanel(
-        stringResource(R.string.states),
+        stringResource(R.string.state),
         collapsed,
         { collapsed = it },
         currentState != null,
