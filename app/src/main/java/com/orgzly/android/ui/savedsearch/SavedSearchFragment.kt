@@ -6,7 +6,10 @@ import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.consumeWindowInsets
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -31,6 +34,7 @@ import com.orgzly.R
 import com.orgzly.android.App
 import com.orgzly.android.db.entity.SavedSearch
 import com.orgzly.android.ui.compose.base.ComposeFragment
+import com.orgzly.android.ui.compose.modifiers.scaffoldPadding
 import com.orgzly.android.ui.compose.providers.LaunchedEventEffect
 import com.orgzly.android.ui.compose.widgets.BackButton
 import com.orgzly.android.ui.compose.widgets.Icons
@@ -126,7 +130,8 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
             },
             snackbarHost = {
                 SnackbarHost(
-                    snackbarHostState
+                    snackbarHostState,
+                    modifier = Modifier.imePadding()
                 )
             }
         ) { contentPadding ->
@@ -135,8 +140,9 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
 
             Column(
                 Modifier
+                    .fillMaxSize()
                     .verticalScroll(rememberScrollState())
-                    .padding(contentPadding)
+                    .scaffoldPadding(contentPadding)
                     .padding(1.rdp),
                 verticalArrangement = Arrangement.spacedBy(
                     1.rdp
