@@ -1,5 +1,6 @@
 package com.orgzly.android.query.user
 
+import android.util.Log
 import com.orgzly.android.query.Condition
 import com.orgzly.android.query.Options
 import com.orgzly.android.query.Query
@@ -15,11 +16,17 @@ import com.orgzly.android.query.SortOrder
 import com.orgzly.android.query.StateType
 import javax.inject.Inject
 import kotlin.collections.forEach
-
+import kotlin.reflect.KClass
 
 class SimpleFilterMapper @Inject constructor() {
 
+    companion object {
+        val TAG = SimpleFilterMapper::class.java.name
+    }
+
     fun fromQuery(query: Query): SimpleQuery {
+        Log.d(TAG, "Mapping $query")
+
         val result = SimpleFilterBuilder()
         val flattenedConditions = query.condition?.let { flattenCondition(it) }
         val search = flattenedConditions?.filterIsInstance<Condition.HasText>()
@@ -100,23 +107,23 @@ class SimpleFilterMapper @Inject constructor() {
                 }
 
                 is Condition.Event -> {
-                    result.event = mapDate(c.interval, c.relation)
+                    result.event = mapDate(c.interval, c.relation, Condition.Event::class)
                 }
 
                 is Condition.Scheduled -> {
-                    result.scheduled = mapDate(c.interval, c.relation)
+                    result.scheduled = mapDate(c.interval, c.relation, Condition.Scheduled::class)
                 }
 
                 is Condition.Deadline -> {
-                    result.deadline = mapDate(c.interval, c.relation)
+                    result.deadline = mapDate(c.interval, c.relation, Condition.Deadline::class)
                 }
 
                 is Condition.Closed -> {
-                    result.closed = mapDate(c.interval, c.relation)
+                    result.closed = mapDate(c.interval, c.relation, Condition.Closed::class)
                 }
 
                 is Condition.Created -> {
-                    result.created = mapDate(c.interval, c.relation)
+                    result.created = mapDate(c.interval, c.relation, Condition.Created::class)
                 }
 
                 else -> {
@@ -182,46 +189,51 @@ class SimpleFilterMapper @Inject constructor() {
                 )
 
                 filter.event?.let {
+                    val (i,r) = it.toIntervalAndRelation(Condition.Event::class)
                     add(
                         Condition.Event(
-                            interval = it.toInterval(),
-                            relation = it.toRelation()
+                            interval = i,
+                            relation = r
                         )
                     )
                 }
 
                 filter.scheduled?.let {
+                    val (i,r) = it.toIntervalAndRelation(Condition.Scheduled::class)
                     add(
                         Condition.Scheduled(
-                            interval = it.toInterval(),
-                            relation = it.toRelation()
+                            interval = i,
+                            relation = r
                         )
                     )
                 }
 
                 filter.deadline?.let {
+                    val (i,r) = it.toIntervalAndRelation(Condition.Deadline::class)
                     add(
                         Condition.Deadline(
-                            interval = it.toInterval(),
-                            relation = it.toRelation()
+                            interval = i,
+                            relation = r
                         )
                     )
                 }
 
                 filter.closed?.let {
+                    val (i,r) = it.toIntervalAndRelation(Condition.Closed::class)
                     add(
                         Condition.Closed(
-                            interval = it.toInterval(),
-                            relation = it.toRelation()
+                            interval = i,
+                            relation = r
                         )
                     )
                 }
 
                 filter.created?.let {
+                    val (i,r) = it.toIntervalAndRelation(Condition.Created::class)
                     add(
                         Condition.Created(
-                            interval = it.toInterval(),
-                            relation = it.toRelation()
+                            interval = i,
+                            relation = r
                         )
                     )
                 }
@@ -268,71 +280,45 @@ private fun flattenCondition(condition: Condition): List<Condition> =
             listOf(condition)
     }
 
-private fun RelativeDateOption.toInterval(): QueryInterval =
+private fun getDefaultEQForType(type: KClass<*>): Relation = when (type) {
+    Condition.Closed::class -> Relation.EQ
+    Condition.Event::class -> Relation.EQ
+    else -> Relation.LE
+}
+
+private fun RelativeDateOption.toIntervalAndRelation(
+    type: KClass<*>
+): Pair<QueryInterval, Relation> =
     when (this) {
         RelativeDateOption.FUTURE ->
-            QueryInterval(QueryInterval.Unit.DAY)
+            QueryInterval(QueryInterval.Unit.DAY) to Relation.GE
 
         RelativeDateOption.PAST ->
-            QueryInterval(QueryInterval.Unit.DAY)
+            QueryInterval(QueryInterval.Unit.DAY) to Relation.LT
 
         RelativeDateOption.TODAY ->
-            QueryInterval(QueryInterval.Unit.DAY, 0)
-
-        RelativeDateOption.YESTERDAY ->
-            QueryInterval(QueryInterval.Unit.DAY, -1)
+            QueryInterval(QueryInterval.Unit.DAY, 0) to getDefaultEQForType(type)
 
         RelativeDateOption.TOMORROW ->
-            QueryInterval(QueryInterval.Unit.DAY, 1)
-
-        RelativeDateOption.LAST_7_DAYS ->
-            QueryInterval(QueryInterval.Unit.DAY, -7)
-
-        RelativeDateOption.LAST_30_DAYS ->
-            QueryInterval(QueryInterval.Unit.DAY, -30)
+            QueryInterval(QueryInterval.Unit.DAY, 1) to Relation.EQ
 
         RelativeDateOption.NEXT_7_DAYS ->
-            QueryInterval(QueryInterval.Unit.DAY, 7)
+            QueryInterval(QueryInterval.Unit.DAY, 7) to Relation.LE
 
         RelativeDateOption.NEXT_30_DAYS ->
-            QueryInterval(QueryInterval.Unit.DAY, 30)
-    }
-
-private fun RelativeDateOption.toRelation(): Relation =
-    when (this) {
-        RelativeDateOption.FUTURE ->
-            Relation.GE
-
-        RelativeDateOption.PAST ->
-            Relation.LT
-
-        RelativeDateOption.TODAY ->
-            Relation.EQ
-
-        RelativeDateOption.YESTERDAY ->
-            Relation.EQ
-
-        RelativeDateOption.TOMORROW ->
-            Relation.EQ
-
-        RelativeDateOption.LAST_7_DAYS,
-        RelativeDateOption.LAST_30_DAYS ->
-            Relation.GE
-
-        RelativeDateOption.NEXT_7_DAYS,
-        RelativeDateOption.NEXT_30_DAYS ->
-            Relation.LE
+            QueryInterval(QueryInterval.Unit.DAY, 30) to Relation.LE
     }
 
 private fun mapDate(
     interval: QueryInterval,
-    relation: Relation
+    relation: Relation,
+    type: KClass<*>
 ): RelativeDateOption {
 
     return when {
         interval.unit == QueryInterval.Unit.DAY &&
                 interval.value == 0 &&
-                relation == Relation.EQ ->
+                relation == getDefaultEQForType(type) ->
             RelativeDateOption.TODAY
 
         interval.unit == QueryInterval.Unit.DAY &&
@@ -353,20 +339,10 @@ private fun mapDate(
                 interval.unit == QueryInterval.Unit.WEEK ->
             RelativeDateOption.NEXT_7_DAYS
 
-        relation == Relation.LT &&
-                interval.value == 7 &&
-                interval.unit == QueryInterval.Unit.WEEK ->
-            RelativeDateOption.LAST_7_DAYS
-
         relation == Relation.GE &&
                 interval.value == 1 &&
                 interval.unit == QueryInterval.Unit.MONTH ->
             RelativeDateOption.NEXT_30_DAYS
-
-        relation == Relation.LT &&
-                interval.value == 1 &&
-                interval.unit == QueryInterval.Unit.MONTH ->
-            RelativeDateOption.LAST_30_DAYS
 
         else ->
             throw UnsupportedSimpleFilterException(

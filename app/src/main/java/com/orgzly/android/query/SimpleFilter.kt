@@ -70,16 +70,10 @@ data class SimpleFilterBuilder(
 
 enum class RelativeDateOption {
     FUTURE,
+    PAST,
 
     TODAY,
     TOMORROW,
-
-    PAST,
-
-    YESTERDAY,
-
-    LAST_7_DAYS,
-    LAST_30_DAYS,
 
     NEXT_7_DAYS,
     NEXT_30_DAYS
