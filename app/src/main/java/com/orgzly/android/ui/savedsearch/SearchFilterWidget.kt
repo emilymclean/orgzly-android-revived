@@ -56,7 +56,6 @@ import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
 import com.orgzly.android.ui.compose.widgets.CollapseHeaderScaffold
 import com.orgzly.android.ui.compose.widgets.Icons
 import com.orgzly.android.ui.compose.widgets.OrgzlyBasicTextField
-import com.orgzly.android.ui.compose.widgets.OrgzlyButton
 import com.orgzly.android.ui.compose.widgets.OrgzlyTonalButton
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
 import com.orgzly.android.ui.compose.widgets.TextFieldHoistEffect
@@ -299,7 +298,7 @@ fun AgendaOptions(
                     ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OrgzlyButton(
+                OrgzlyTonalButton(
                     onClick = {
                         (agendaDays - 1).coerceAtLeast(0).let {
                             textFieldState.setTextAndPlaceCursorAtEnd("$it")
@@ -347,7 +346,7 @@ fun AgendaOptions(
                     ),
                 )
 
-                OrgzlyButton(
+                OrgzlyTonalButton(
                     onClick = {
                         (agendaDays + 1).let {
                             textFieldState.setTextAndPlaceCursorAtEnd("$it")
