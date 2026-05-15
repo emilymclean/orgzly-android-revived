@@ -63,7 +63,7 @@ fun BaseCollapsePanel(
         modifier = Modifier
             .clip(MaterialTheme.shapes.large)
             .background(
-                MaterialTheme.colorScheme.surfaceContainerHigh
+                MaterialTheme.colorScheme.surfaceContainer
             )
             .animateContentSize()
             .then(modifier)
@@ -88,7 +88,7 @@ fun CollapseHeaderScaffold(
     Row(
         Modifier
             .fillMaxWidth()
-            .background(MaterialTheme.colorScheme.surfaceContainerHighest)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .then(modifier),
         verticalAlignment = Alignment.CenterVertically
     ) {

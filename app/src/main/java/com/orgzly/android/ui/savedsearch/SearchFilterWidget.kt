@@ -30,6 +30,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalResources
@@ -47,6 +48,7 @@ import com.orgzly.android.prefs.StateWorkflows
 import com.orgzly.android.query.RelativeDateOption
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.SimpleSortOrder
+import com.orgzly.android.ui.compose.modifiers.circularReveal
 import com.orgzly.android.ui.compose.modifiers.noRippleClickable
 import com.orgzly.android.ui.compose.providers.appPreference
 import com.orgzly.android.ui.compose.widgets.BaseCollapsePanel
@@ -54,6 +56,7 @@ import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
 import com.orgzly.android.ui.compose.widgets.CollapseHeaderScaffold
 import com.orgzly.android.ui.compose.widgets.Icons
 import com.orgzly.android.ui.compose.widgets.OrgzlyBasicTextField
+import com.orgzly.android.ui.compose.widgets.OrgzlyButton
 import com.orgzly.android.ui.compose.widgets.OrgzlyTonalButton
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
 import com.orgzly.android.ui.compose.widgets.TextFieldHoistEffect
@@ -259,7 +262,15 @@ fun AgendaOptions(
         onChange(it.toIntOrNull() ?: 0)
     }
 
-    Column {
+    Column(
+        Modifier
+            .clip(MaterialTheme.shapes.large)
+            .animateContentSize()
+            .circularReveal(
+                agendaDays != null,
+                MaterialTheme.colorScheme.surfaceContainer
+            )
+    ) {
         CheckboxFormLockup(
             agendaDays != null,
             {
@@ -279,10 +290,16 @@ fun AgendaOptions(
         )
         agendaDays?.let { agendaDays ->
             Row(
-                Modifier.fillMaxWidth(),
+                Modifier
+                    .fillMaxWidth()
+                    .padding(
+                        bottom = 1.rdp,
+                        start = 1.rdp,
+                        end = 1.rdp
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                OrgzlyTonalButton(
+                OrgzlyButton(
                     onClick = {
                         (agendaDays - 1).coerceAtLeast(0).let {
                             textFieldState.setTextAndPlaceCursorAtEnd("$it")
@@ -330,7 +347,7 @@ fun AgendaOptions(
                     ),
                 )
 
-                OrgzlyTonalButton(
+                OrgzlyButton(
                     onClick = {
                         (agendaDays + 1).let {
                             textFieldState.setTextAndPlaceCursorAtEnd("$it")
