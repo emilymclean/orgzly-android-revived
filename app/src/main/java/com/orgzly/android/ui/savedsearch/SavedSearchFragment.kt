@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -85,6 +87,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
             val state by viewModel.mode.collectAsStateWithLifecycle()
             Column(
                 Modifier
+                    .verticalScroll(rememberScrollState())
                     .padding(contentPadding)
                     .padding(1.rdp),
                 verticalArrangement = Arrangement.spacedBy(

@@ -77,7 +77,7 @@ fun SearchFilterWidget(
             }
         )
 
-        if (allBooks.size > 1) {
+        if (allBooks.size > 0) {
             BookFilter(
                 filter.books,
                 { onChange(
@@ -105,7 +105,39 @@ private val sortOrderEntries = listOf(
     SimpleSortOrderEntry(
         SimpleSortOrder.BOOK,
         R.string.search_filter_book_sort_order
-    )
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.TITLE,
+        R.string.search_filter_title_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.PRIORITY,
+        R.string.search_filter_priority_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.STATE,
+        R.string.search_filter_state_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.SCHEDULED,
+        R.string.search_filter_scheduled_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.DEADLINE,
+        R.string.search_filter_deadline_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.EVENT,
+        R.string.search_filter_event_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.CLOSED,
+        R.string.search_filter_closed_sort_order
+    ),
+    SimpleSortOrderEntry(
+        SimpleSortOrder.CREATED,
+        R.string.search_filter_created_sort_order
+    ),
 )
 
 @Composable
@@ -169,7 +201,8 @@ private fun SortOrderEntry(
             }
         )
         AnimatedVisibility(
-            entry.sortOrder == sortOrder,
+            entry.sortOrder == sortOrder &&
+                    entry.sortOrder != SimpleSortOrder.DEFAULT,
             enter = expandIn(),
             exit = shrinkOut()
         ) {
