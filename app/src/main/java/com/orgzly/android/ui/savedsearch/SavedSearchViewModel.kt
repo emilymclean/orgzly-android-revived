@@ -1,5 +1,6 @@
 package com.orgzly.android.ui.savedsearch
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -11,6 +12,7 @@ import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.orgzly.android.data.DataRepository
 import com.orgzly.android.db.entity.SavedSearch
+import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.user.SimpleFilterMapper
 import com.orgzly.android.query.user.InternalQueryBuilder
@@ -77,6 +79,7 @@ class SavedSearchViewModel @AssistedInject constructor(
     private val simpleFilterMapper: SimpleFilterMapper,
     private val queryParser: InternalQueryParser,
     private val queryBuilder: InternalQueryBuilder,
+    private val context: Context,
     @Assisted private var existingSearchId: Long?
 ): CommonViewModel() {
 
@@ -174,6 +177,8 @@ class SavedSearchViewModel @AssistedInject constructor(
     val events = _events.asFlow(viewModelScope)
 
     init {
+        val shouldDefaultToSimple = !AppPreferences.isDefaultToAdvancedQueryEnabled(context)
+
         existingSearchId?.let { existingSearchId ->
             shouldShowValidationErrors.value = true
             viewModelScope.launch {
@@ -182,6 +187,7 @@ class SavedSearchViewModel @AssistedInject constructor(
                 } ?: return@launch
                 nameField.setTextAndPlaceCursorAtEnd(existing.name)
                 existingSearchPosition = existing.position
+                advancedQueryField.setTextAndPlaceCursorAtEnd(existing.query)
 
                 try {
                     val parsed = simpleFilterMapper.fromQuery(
@@ -189,14 +195,13 @@ class SavedSearchViewModel @AssistedInject constructor(
                     )
                     currentSimpleFilter.value = parsed.filter
                     simpleSearchField.setTextAndPlaceCursorAtEnd(parsed.search)
-                    isSimpleSearch.value = true
+                    isSimpleSearch.value = shouldDefaultToSimple
                 } catch (e: Exception) {
-                    advancedQueryField.setTextAndPlaceCursorAtEnd(existing.query)
                     isSimpleSearch.value = false
                 }
             }
         } ?: run {
-            isSimpleSearch.value = true
+            isSimpleSearch.value = shouldDefaultToSimple
         }
     }
 
