@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asFlow
@@ -15,6 +16,7 @@ import com.orgzly.android.query.user.InternalQueryBuilder
 import com.orgzly.android.query.user.InternalQueryParser
 import com.orgzly.android.ui.CommonViewModel
 import com.orgzly.android.ui.compose.base.EventFlow
+import com.orgzly.android.ui.util.combine
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -23,6 +25,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -30,6 +33,8 @@ import kotlinx.coroutines.withContext
 @Immutable
 data class SavedSearchModel(
     val mode: Mode = Mode.None,
+    val isNameValid: Boolean = false,
+    val isQueryValid: Boolean = true,
     val allTags: List<String> = emptyList(),
     val allBooks: List<String> = emptyList()
 ) {
@@ -87,14 +92,44 @@ class SavedSearchViewModel @AssistedInject constructor(
         it.map { it.book.name }
     }
 
+    private val isNameValid = snapshotFlow { nameField.text.toString() }.mapLatest {
+        if (it.isBlank()) return@mapLatest false
+
+        val existing = dataRepository.getSavedSearchesByNameIgnoreCase(it)
+        if (existing.isNotEmpty() && existingSearchId == null) return@mapLatest false
+        if (existing.isNotEmpty() && existing.first().id != existingSearchId) return@mapLatest false
+
+        true
+    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed())
+
+    private val isQueryValid = combine(
+        snapshotFlow { advancedQueryField.text.toString() },
+        snapshotFlow { simpleSearchField.text.toString() },
+        isSimpleSearch,
+        currentSimpleFilter
+    ) { advancedQueryField, simpleSearchField, isSimpleSearch, currentSimpleFilter ->
+        when (isSimpleSearch) {
+            null -> false
+            true -> queryBuilder.build(simpleFilterMapper.toQuery(
+                simpleSearchField,
+                currentSimpleFilter
+            )).isNotBlank()
+            else -> advancedQueryField.isNotBlank()
+        }
+    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed())
+
     val state = combine(
         isSimpleSearch,
         currentSimpleFilter,
+        isNameValid,
+        isQueryValid,
         tags,
         books,
     ) {
         isSimpleSearch,
         currentSimpleFilter,
+        isNameValid,
+        isQueryValid,
         tags,
         books ->
 
@@ -106,6 +141,8 @@ class SavedSearchViewModel @AssistedInject constructor(
                 )
                 else -> SavedSearchModel.Mode.Advanced
             },
+            isNameValid,
+            isQueryValid,
             tags,
             books
         )

@@ -133,6 +133,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                             stringResource(R.string.name)
                         )
                     },
+                    isError = !state.isNameValid
                 )
 
                 when (state.mode) {
@@ -145,6 +146,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                                     stringResource(R.string.query)
                                 )
                             },
+                            isError = !state.isQueryValid
                         )
                     }
                     is SavedSearchModel.Mode.Simple -> {
@@ -156,6 +158,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                                     stringResource(R.string.options_menu_item_search)
                                 )
                             },
+                            isError = !state.isQueryValid
                         )
                     }
                     else -> {}
