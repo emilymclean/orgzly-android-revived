@@ -126,6 +126,8 @@ class SimpleFilterMapper @Inject constructor() {
                     result.created = mapDate(c.interval, c.relation, Condition.Created::class)
                 }
 
+                is Condition.HasText -> {}
+
                 else -> {
                     throw UnsupportedSimpleFilterException(
                         "Unsupported condition: $c"
@@ -241,13 +243,15 @@ class SimpleFilterMapper @Inject constructor() {
                 search.let {
                     val tokenizer = QueryTokenizer(it, "(", ")")
 
-                    tokenizer.tokens.map {
-                        val unquoted = QueryTokenizer.Companion.unquote(it)
-                        Condition.HasText(
-                            unquoted,
-                            unquoted == it
-                        )
-                    }
+                    addAll(
+                        tokenizer.tokens.map {
+                            val unquoted = QueryTokenizer.unquote(it)
+                            Condition.HasText(
+                                unquoted,
+                                unquoted != it
+                            )
+                        }
+                    )
                 }
             }
         ),
