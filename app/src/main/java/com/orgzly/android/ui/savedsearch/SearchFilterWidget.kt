@@ -329,6 +329,9 @@ fun AgendaOptions(
                         if (!asCharSequence().all { it.isDigit() }) {
                             revertAllChanges()
                         }
+                        if ((asCharSequence().toString().toIntOrNull() ?: 0) > 10000) {
+                            revertAllChanges()
+                        }
                     },
                     outputTransformation = OutputTransformation {
                         val number = asCharSequence().toString().toIntOrNull() ?: 0
