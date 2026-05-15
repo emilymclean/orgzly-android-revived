@@ -122,6 +122,17 @@ class SimpleFilterMapper @Inject constructor() {
             }
         }
 
+        when (query.sortOrders.size) {
+            0 -> {}
+            1 -> {
+                result.sortOrder = mapSortOrder(query.sortOrders.first())
+                result.sortDescending = query.sortOrders.first().desc
+            }
+            else -> throw UnsupportedSimpleFilterException(
+                "Cannot represent more than one sort order"
+            )
+        }
+
         return SimpleQuery(
             search,
             result.build()
