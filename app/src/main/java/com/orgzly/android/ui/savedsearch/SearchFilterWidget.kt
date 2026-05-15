@@ -356,7 +356,7 @@ fun AgendaOptions(
                             onChange(it)
                         }
                     },
-                    enabled = agendaDays < 30
+                    enabled = agendaDays < 100
                 ) {
                     Icon(
                         painterIcon(Icons.ADD),
