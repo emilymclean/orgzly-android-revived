@@ -11,7 +11,7 @@ data class SimpleQuery(
 data class SimpleFilter(
     val books: Set<String> = emptySet(),
 
-    val excludeDone: Boolean = true,
+    val excludeDone: Boolean = false,
     val state: String? = null,
 
     val priority: String? = null,
@@ -33,7 +33,7 @@ data class SimpleFilter(
 data class SimpleFilterBuilder(
     val books: MutableSet<String> = mutableSetOf(),
 
-    var excludeDone: Boolean = true,
+    var excludeDone: Boolean = false,
     var state: String? = null,
 
     var priority: String? = null,
