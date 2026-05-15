@@ -1,8 +1,12 @@
 package com.orgzly.android.ui.savedsearch
 
 import androidx.annotation.StringRes
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -110,12 +114,14 @@ private fun SortOrder(
     descending: Boolean,
     onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit
 ) {
-    Column {
-        Text(
-            stringResource(R.string.sort_order),
-            style = MaterialTheme.typography.bodyMedium
-        )
 
+    var collapsed by remember { mutableStateOf(true) }
+    CollapsePanel(
+        stringResource(R.string.sort_order),
+        collapsed,
+        { collapsed = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
         for (entry in sortOrderEntries) {
             SortOrderEntry(
                 entry,
@@ -156,21 +162,31 @@ private fun SortOrderEntry(
                 .animateContentSize()
         )
 
-        if (entry.sortOrder == sortOrder) {
-            val rotationAnimation by animateFloatAsState(
-                when (descending) {
-                    true -> 0f
-                    else -> 180f
-                }
-            )
+        val rotationAnimation by animateFloatAsState(
+            when (descending) {
+                true -> 0f
+                else -> 180f
+            }
+        )
+        AnimatedVisibility(
+            entry.sortOrder == sortOrder,
+            enter = expandIn(),
+            exit = shrinkOut()
+        ) {
             Icon(
                 painterIcon(
                     Icons.ARROW_DOWNWARD
                 ),
                 modifier = Modifier
+                    .padding(end = 1.rdp)
                     .noRippleClickable(onClick = callback)
                     .rotate(rotationAnimation),
-                contentDescription = null
+                contentDescription = stringResource(
+                    when (descending) {
+                        true -> R.string.content_description_sort_order_descending
+                        else -> R.string.content_description_sort_order_ascending
+                    }
+                )
             )
         }
     }

@@ -766,4 +766,6 @@
     <string name="search_filter_book_sort_order">Book</string>
 
     <string name="content_description_back_button">Navigate back</string>
+    <string name="content_description_sort_order_ascending">Sort ascending</string>
+    <string name="content_description_sort_order_descending">Sort descending</string>
 </resources>
