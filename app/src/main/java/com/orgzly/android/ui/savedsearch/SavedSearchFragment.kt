@@ -15,7 +15,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.SnackbarVisuals
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -115,6 +114,8 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
             }
         ) { contentPadding ->
             val state by viewModel.state.collectAsStateWithLifecycle()
+            if (state.mode == SavedSearchModel.Mode.None) return@Scaffold
+
             Column(
                 Modifier
                     .verticalScroll(rememberScrollState())
@@ -157,6 +158,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                             },
                         )
                     }
+                    else -> {}
                 }
 
                 OrgzlyTextButton(
@@ -179,6 +181,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                             when (state.mode) {
                                 is SavedSearchModel.Mode.Advanced -> R.string.search_filter_swap_to_simple
                                 is SavedSearchModel.Mode.Simple -> R.string.search_filter_swap_to_advanced
+                                else -> R.string.search_filter_swap_to_simple
                             }
                         ))
                     }

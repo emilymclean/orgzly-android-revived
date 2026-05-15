@@ -29,12 +29,14 @@ import kotlinx.coroutines.withContext
 
 @Immutable
 data class SavedSearchModel(
-    val mode: Mode = Mode.Simple(SimpleFilter()),
+    val mode: Mode = Mode.None,
     val allTags: List<String> = emptyList(),
     val allBooks: List<String> = emptyList()
 ) {
 
     sealed interface Mode {
+
+        data object None: Mode
 
         data object Advanced: Mode
 
@@ -72,7 +74,7 @@ class SavedSearchViewModel @AssistedInject constructor(
         }
     }
 
-    private val isSimpleSearch = MutableStateFlow(true)
+    private val isSimpleSearch = MutableStateFlow<Boolean?>(null)
 
     private var currentSimpleFilter = MutableStateFlow(SimpleFilter())
 
@@ -98,6 +100,7 @@ class SavedSearchViewModel @AssistedInject constructor(
 
         SavedSearchModel(
             when (isSimpleSearch) {
+                null -> SavedSearchModel.Mode.None
                 true -> SavedSearchModel.Mode.Simple(
                     currentSimpleFilter
                 )
@@ -129,6 +132,7 @@ class SavedSearchViewModel @AssistedInject constructor(
                     )
                     currentSimpleFilter.value = parsed.filter
                     simpleSearchField.setTextAndPlaceCursorAtEnd(parsed.search)
+                    isSimpleSearch.value = true
                 } catch (e: Exception) {
                     advancedQueryField.setTextAndPlaceCursorAtEnd(existing.query)
                     isSimpleSearch.value = false
