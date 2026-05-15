@@ -28,6 +28,7 @@ import cl.emilym.compose.units.rdp
 import com.orgzly.R
 import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.prefs.StateWorkflows
+import com.orgzly.android.query.RelativeDateOption
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.SimpleSortOrder
 import com.orgzly.android.ui.compose.modifiers.noRippleClickable
@@ -126,6 +127,66 @@ fun SearchFilterWidget(
                 allBooks
             )
         }
+
+        DateFilter(
+            stringResource(R.string.event),
+            filter.event,
+            {
+                onChange(
+                    filter.copy(
+                        event = it
+                    )
+                )
+            }
+        )
+
+        DateFilter(
+            stringResource(R.string.scheduled),
+            filter.scheduled,
+            {
+                onChange(
+                    filter.copy(
+                        scheduled = it
+                    )
+                )
+            }
+        )
+
+        DateFilter(
+            stringResource(R.string.deadline),
+            filter.deadline,
+            {
+                onChange(
+                    filter.copy(
+                        deadline = it
+                    )
+                )
+            }
+        )
+
+        DateFilter(
+            stringResource(R.string.closed),
+            filter.closed,
+            {
+                onChange(
+                    filter.copy(
+                        closed = it
+                    )
+                )
+            }
+        )
+
+        DateFilter(
+            stringResource(R.string.created),
+            filter.created,
+            {
+                onChange(
+                    filter.copy(
+                        created = it
+                    )
+                )
+            }
+        )
     }
 }
 
@@ -392,6 +453,54 @@ private fun BookFilter(
                         )
                     },
                     book,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+private val relativeDateOptionLabels = listOf(
+    RelativeDateOption.TODAY to R.string.search_filter_date_today,
+    RelativeDateOption.TOMORROW to R.string.search_filter_date_tomorrow,
+    RelativeDateOption.FUTURE to R.string.search_filter_date_tomorrow,
+    RelativeDateOption.PAST to R.string.search_filter_date_past,
+    RelativeDateOption.NEXT_7_DAYS to R.string.search_filter_date_next_seven_days,
+    RelativeDateOption.NEXT_30_DAYS to R.string.search_filter_date_next_thirty_days,
+)
+
+@Composable
+private fun DateFilter(
+    title: String,
+    current: RelativeDateOption?,
+    onChange: (RelativeDateOption?) -> Unit
+) {
+    var collapsed by remember { mutableStateOf(true) }
+    CollapsePanel(
+        title,
+        collapsed,
+        { collapsed = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            Modifier.padding(dropdownPadding),
+            verticalArrangement = Arrangement.spacedBy(dropdownVerticalSpacing)
+        ) {
+            RadioButtonFormLockup(
+                current == null,
+                onClick = {
+                    onChange(null)
+                },
+                stringResource(R.string.search_filter_state_none),
+                modifier = Modifier.fillMaxWidth()
+            )
+            for ((option, label) in relativeDateOptionLabels) {
+                RadioButtonFormLockup(
+                    current == option,
+                    onClick = {
+                        onChange(current)
+                    },
+                    stringResource(label),
                     modifier = Modifier.fillMaxWidth()
                 )
             }

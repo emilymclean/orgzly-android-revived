@@ -774,6 +774,12 @@
     <string name="search_filter_priority_sort_order">Priority</string>
     <string name="search_filter_state_sort_order">State</string>
     <string name="search_filter_state_none">None</string>
+    <string name="search_filter_date_today">Today</string>
+    <string name="search_filter_date_tomorrow">Tomorrow</string>
+    <string name="search_filter_date_future">Future</string>
+    <string name="search_filter_date_past">Past</string>
+    <string name="search_filter_date_next_seven_days">Next 7 Days</string>
+    <string name="search_filter_date_next_thirty_days">Next 30 Days</string>
 
     <string name="content_description_back_button">Navigate back</string>
     <string name="content_description_sort_order_ascending">Sort ascending</string>
