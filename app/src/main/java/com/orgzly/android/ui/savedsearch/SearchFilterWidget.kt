@@ -256,19 +256,24 @@ fun AgendaOptions(
     agendaDays: Int?,
     onChange: (Int?) -> Unit
 ) {
-    val textFieldState = remember { TextFieldState("${agendaDays ?: 7}") }
+    val textFieldState = remember { TextFieldState("${agendaDays ?: ""}") }
+    var hasHoistedFirst by remember { mutableStateOf(false) }
     TextFieldHoistEffect(textFieldState) {
+        if (!hasHoistedFirst) {
+            hasHoistedFirst = true
+            return@TextFieldHoistEffect
+        }
         onChange(it.toIntOrNull() ?: 0)
     }
 
     Column(
         Modifier
             .clip(MaterialTheme.shapes.large)
-            .animateContentSize()
             .circularReveal(
                 agendaDays != null,
                 MaterialTheme.colorScheme.surfaceContainer
             )
+            .animateContentSize()
     ) {
         CheckboxFormLockup(
             agendaDays != null,
