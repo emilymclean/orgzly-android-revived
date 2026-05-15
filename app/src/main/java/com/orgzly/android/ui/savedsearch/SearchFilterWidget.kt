@@ -23,8 +23,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cl.emilym.compose.units.rdp
@@ -39,8 +41,8 @@ import com.orgzly.android.ui.compose.providers.appPreference
 import com.orgzly.android.ui.compose.widgets.BaseCollapsePanel
 import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
 import com.orgzly.android.ui.compose.widgets.CollapseHeaderScaffold
-import com.orgzly.android.ui.compose.widgets.CollapsePanel
 import com.orgzly.android.ui.compose.widgets.Icons
+import com.orgzly.android.ui.compose.widgets.OrgzlyTonalButton
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
 import com.orgzly.android.ui.compose.widgets.painterIcon
 import kotlin.text.equals
@@ -71,17 +73,15 @@ fun SearchFilterWidget(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            CheckboxFormLockup(
-                filter.isAgenda,
+            AgendaOptions(
+                filter.agendaDays,
                 {
                     onChange(
                         filter.copy(
-                            isAgenda = it
+                            agendaDays = it
                         )
                     )
-                },
-                stringResource(R.string.search_filter_show_as_agenda),
-                modifier = Modifier.fillMaxWidth()
+                }
             )
         }
 
@@ -234,6 +234,69 @@ private fun FilterCollapsePanel(
         }
     ) {
         content()
+    }
+}
+
+@Composable
+fun AgendaOptions(
+    agendaDays: Int?,
+    onChange: (Int?) -> Unit
+) {
+    Column {
+        CheckboxFormLockup(
+            agendaDays != null,
+            {
+                onChange(
+                    when (it) {
+                        true -> 7
+                        else -> null
+                    }
+                )
+            },
+            stringResource(R.string.search_filter_show_as_agenda),
+            modifier = Modifier.fillMaxWidth()
+        )
+        agendaDays?.let { agendaDays ->
+            Row(
+                Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                OrgzlyTonalButton(
+                    onClick = {
+                        onChange((agendaDays - 1).coerceAtLeast(0))
+                    },
+                    enabled = agendaDays > 0
+                ) {
+                    Icon(
+                        painterIcon(Icons.SUBTRACT),
+                        contentDescription = stringResource(R.string.content_description_subtract)
+                    )
+                }
+
+                Text(
+                    pluralStringResource(
+                        R.plurals.search_filter_agenda_days,
+                        agendaDays,
+                        agendaDays
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+
+                OrgzlyTonalButton(
+                    onClick = {
+                        onChange((agendaDays + 1).coerceAtMost(30))
+                    },
+                    enabled = agendaDays < 30
+                ) {
+                    Icon(
+                        painterIcon(Icons.ADD),
+                        contentDescription = stringResource(R.string.content_description_add)
+                    )
+                }
+            }
+        }
     }
 }
 

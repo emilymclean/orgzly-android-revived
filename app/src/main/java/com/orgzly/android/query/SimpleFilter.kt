@@ -27,7 +27,7 @@ data class SimpleFilter(
     val sortOrder: SimpleSortOrder = SimpleSortOrder.DEFAULT,
     val sortDescending: Boolean = true,
 
-    val isAgenda: Boolean = false
+    val agendaDays: Int? = null
 )
 
 data class SimpleFilterBuilder(
@@ -49,7 +49,7 @@ data class SimpleFilterBuilder(
     var sortOrder: SimpleSortOrder = SimpleSortOrder.DEFAULT,
     var sortDescending: Boolean = true,
 
-    var isAgenda: Boolean = false
+    var agendaDays: Int? = null
 ) {
     fun build(): SimpleFilter = SimpleFilter(
         books = books.toSet(),
@@ -64,7 +64,7 @@ data class SimpleFilterBuilder(
         created = created,
         sortOrder = sortOrder,
         sortDescending = sortDescending,
-        isAgenda = isAgenda
+        agendaDays = agendaDays
     )
 }
 

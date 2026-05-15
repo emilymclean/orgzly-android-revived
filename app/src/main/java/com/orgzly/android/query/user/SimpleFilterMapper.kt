@@ -147,6 +147,8 @@ class SimpleFilterMapper @Inject constructor() {
             )
         }
 
+        result.agendaDays = query.options.agendaDays
+
         return SimpleQuery(
             search,
             result.build()
@@ -257,7 +259,7 @@ class SimpleFilterMapper @Inject constructor() {
         ),
         listOfNotNull(mapSimpleSortOrder(filter.sortOrder, filter.sortDescending)),
         Options(
-            agendaDays = if (filter.isAgenda) 3 else 0
+            agendaDays = filter.agendaDays ?: 0
         )
     )
 
