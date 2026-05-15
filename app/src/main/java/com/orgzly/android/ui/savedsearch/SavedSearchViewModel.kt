@@ -131,7 +131,12 @@ class SavedSearchViewModel @AssistedInject constructor(
         isSimpleSearch,
         currentSimpleFilter
     ) { advancedQueryField, simpleSearchField, isSimpleSearch, currentSimpleFilter ->
-        getQueryString().isNotBlank()
+        getQueryString(
+            advancedQueryField,
+            simpleSearchField,
+            isSimpleSearch,
+            currentSimpleFilter
+        ).isNotBlank()
     }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
     val state = combine(
@@ -205,13 +210,25 @@ class SavedSearchViewModel @AssistedInject constructor(
         }
     }
 
-    private fun getQueryString(): String = when (isSimpleSearch.value) {
+    private fun getQueryString(): String = getQueryString(
+        advancedQueryField.text.toString(),
+        simpleSearchField.text.toString(),
+        isSimpleSearch.value,
+        currentSimpleFilter.value
+    )
+
+    private fun getQueryString(
+        advancedQueryField: String,
+        simpleSearchField: String,
+        isSimpleSearch: Boolean?,
+        currentSimpleFilter: SimpleFilter
+    ): String = when (isSimpleSearch) {
         null -> ""
         true -> queryBuilder.build(simpleFilterMapper.toQuery(
-            simpleSearchField.text.toString(),
-            currentSimpleFilter.value
+            simpleSearchField,
+            currentSimpleFilter
         ))
-        else -> advancedQueryField.text.toString()
+        else -> advancedQueryField
     }
 
     fun switchSearchStyle() {
