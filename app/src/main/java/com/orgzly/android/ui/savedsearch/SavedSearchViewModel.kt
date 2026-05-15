@@ -7,7 +7,6 @@ import androidx.compose.runtime.Immutable
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asFlow
-import androidx.lifecycle.map
 import androidx.lifecycle.viewModelScope
 import com.orgzly.android.data.DataRepository
 import com.orgzly.android.query.SimpleFilter
@@ -15,6 +14,7 @@ import com.orgzly.android.query.user.SimpleFilterMapper
 import com.orgzly.android.query.user.InternalQueryBuilder
 import com.orgzly.android.query.user.InternalQueryParser
 import com.orgzly.android.ui.CommonViewModel
+import com.orgzly.android.ui.compose.base.EventFlow
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedFactory
 import dagger.assisted.AssistedInject
@@ -22,7 +22,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -45,6 +44,10 @@ data class SavedSearchModel(
 
     }
 
+}
+
+enum class SavedSearchSnackbar {
+    SWITCH_TO_SIMPLE_FAILED
 }
 
 class SavedSearchViewModel @AssistedInject constructor(
@@ -82,7 +85,7 @@ class SavedSearchViewModel @AssistedInject constructor(
         it.map { it.book.name }
     }
 
-    val mode = combine(
+    val state = combine(
         isSimpleSearch,
         currentSimpleFilter,
         tags,
@@ -109,6 +112,8 @@ class SavedSearchViewModel @AssistedInject constructor(
         SavedSearchModel()
     )
 
+    private val _snackbar = EventFlow<SavedSearchSnackbar>()
+    val snackbar = _snackbar.asFlow(viewModelScope)
 
     init {
         existingSearchId?.let {
@@ -153,6 +158,9 @@ class SavedSearchViewModel @AssistedInject constructor(
                     isSimpleSearch.value = true
                 } catch (e: Exception) {
                     Log.e(TAG, "Cannot swap to simple search", e)
+                    viewModelScope.launch {
+                        _snackbar.send(SavedSearchSnackbar.SWITCH_TO_SIMPLE_FAILED)
+                    }
                 }
             }
         }
