@@ -29,16 +29,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.toLowerCase
 import cl.emilym.compose.units.rdp
 import com.orgzly.R
+import com.orgzly.android.prefs.AppPreferences
+import com.orgzly.android.prefs.StateWorkflows
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.SimpleSortOrder
 import com.orgzly.android.ui.compose.modifiers.noRippleClickable
+import com.orgzly.android.ui.compose.providers.appPreference
 import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
 import com.orgzly.android.ui.compose.widgets.CollapsePanel
 import com.orgzly.android.ui.compose.widgets.Icons
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
 import com.orgzly.android.ui.compose.widgets.painterIcon
+import java.util.Locale
+import java.util.Locale.getDefault
+import kotlin.text.equals
 
 @Composable
 fun SearchFilterWidget(
@@ -88,6 +95,17 @@ fun SearchFilterWidget(
                     filter.copy(
                         sortOrder = sortOrder,
                         sortDescending = descending
+                    )
+                )
+            }
+        )
+
+        StateFilter(
+            filter.states,
+            {
+                onChange(
+                    filter.copy(
+                        states = it
                     )
                 )
             }
@@ -281,18 +299,66 @@ private fun TagsFilter(
         ) {
             for (tag in allTags) {
                 CheckboxFormLockup(
-                    tags.contains(tag),
+                    tags.any {
+                        it.equals(tag, ignoreCase = true)
+                    },
                     onCheckedChange = {
                         onTagChange(
                             when (it) {
                                 true -> tags + tag
                                 else -> tags.filterNot {
-                                    it == tag
+                                    it.equals(tag, ignoreCase = true)
                                 }.toSet()
                             }
                         )
                     },
                     tag,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StateFilter(
+    states: Set<String>,
+    onStateChange: (Set<String>) -> Unit,
+) {
+    val allStatesString by appPreference { AppPreferences.states(it) }
+    val allStates = remember(allStatesString) {
+        StateWorkflows(allStatesString).flatMap {
+            (it.todoKeywords?.toList() ?: emptyList<String>()) +
+            (it.doneKeywords?.toList() ?: emptyList<String>())
+        }
+    }
+
+    var collapsed by remember { mutableStateOf(true) }
+    CollapsePanel(
+        stringResource(R.string.states),
+        collapsed,
+        { collapsed = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            Modifier.padding(dropdownPadding)
+        ) {
+            for (state in allStates) {
+                CheckboxFormLockup(
+                    states.any {
+                        it.equals(state, ignoreCase = true)
+                    },
+                    onCheckedChange = {
+                        onStateChange(
+                            when (it) {
+                                true -> states + state
+                                else -> states.filterNot {
+                                    it.equals(state, ignoreCase = true)
+                                }.toSet()
+                            }
+                        )
+                    },
+                    state,
                     modifier = Modifier.fillMaxWidth()
                 )
             }

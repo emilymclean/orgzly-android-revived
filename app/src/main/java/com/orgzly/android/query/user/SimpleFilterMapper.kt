@@ -65,7 +65,8 @@ class SimpleFilterMapper @Inject constructor() {
                 }
 
                 is Condition.HasState -> {
-                    rejectIf(true, "Cannot have non type states")
+                    rejectIf(c.not)
+                    result.states += c.state
                 }
 
                 is Condition.HasStateType -> {
