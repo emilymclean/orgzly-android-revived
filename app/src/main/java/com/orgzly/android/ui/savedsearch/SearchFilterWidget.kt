@@ -77,7 +77,7 @@ fun SearchFilterWidget(
             }
         )
 
-        if (allBooks.size > 0) {
+        if (allBooks.size > 1) {
             BookFilter(
                 filter.books,
                 { onChange(
