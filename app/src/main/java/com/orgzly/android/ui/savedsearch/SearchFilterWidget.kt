@@ -2,24 +2,17 @@ package com.orgzly.android.ui.savedsearch
 
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.expandIn
 import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -29,7 +22,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.toLowerCase
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import cl.emilym.compose.units.rdp
 import com.orgzly.R
 import com.orgzly.android.prefs.AppPreferences
@@ -43,8 +37,6 @@ import com.orgzly.android.ui.compose.widgets.CollapsePanel
 import com.orgzly.android.ui.compose.widgets.Icons
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
 import com.orgzly.android.ui.compose.widgets.painterIcon
-import java.util.Locale
-import java.util.Locale.getDefault
 import kotlin.text.equals
 
 @Composable
@@ -101,11 +93,11 @@ fun SearchFilterWidget(
         )
 
         StateFilter(
-            filter.states,
+            filter.state,
             {
                 onChange(
                     filter.copy(
-                        states = it
+                        state = it
                     )
                 )
             }
@@ -142,6 +134,8 @@ private val dropdownPadding: PaddingValues
     get() = PaddingValues(
         all = 1.rdp
     )
+
+private val dropdownVerticalSpacing: Dp = 0.dp
 
 private data class SimpleSortOrderEntry(
     val sortOrder: SimpleSortOrder,
@@ -207,7 +201,8 @@ private fun SortOrder(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.padding(dropdownPadding)
+            Modifier.padding(dropdownPadding),
+            verticalArrangement = Arrangement.spacedBy(dropdownVerticalSpacing)
         ) {
             for (entry in sortOrderEntries) {
                 SortOrderEntry(
@@ -294,7 +289,8 @@ private fun TagsFilter(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.padding(dropdownPadding)
+            Modifier.padding(dropdownPadding),
+            verticalArrangement = Arrangement.spacedBy(dropdownVerticalSpacing)
         ) {
             for (tag in allTags) {
                 CheckboxFormLockup(
@@ -321,8 +317,8 @@ private fun TagsFilter(
 
 @Composable
 private fun StateFilter(
-    states: Set<String>,
-    onStateChange: (Set<String>) -> Unit,
+    currentState: String?,
+    onStateChange: (String?) -> Unit,
 ) {
     val allStatesString by appPreference { AppPreferences.states(it) }
     val allStates = remember(allStatesString) {
@@ -340,22 +336,22 @@ private fun StateFilter(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.padding(dropdownPadding)
+            Modifier.padding(dropdownPadding),
+            verticalArrangement = Arrangement.spacedBy(dropdownVerticalSpacing)
         ) {
+            RadioButtonFormLockup(
+                currentState == null,
+                onClick = {
+                    onStateChange(null)
+                },
+                stringResource(R.string.search_filter_state_none),
+                modifier = Modifier.fillMaxWidth()
+            )
             for (state in allStates) {
-                CheckboxFormLockup(
-                    states.any {
-                        it.equals(state, ignoreCase = true)
-                    },
-                    onCheckedChange = {
-                        onStateChange(
-                            when (it) {
-                                true -> states + state
-                                else -> states.filterNot {
-                                    it.equals(state, ignoreCase = true)
-                                }.toSet()
-                            }
-                        )
+                RadioButtonFormLockup(
+                    state.equals(currentState, ignoreCase = true),
+                    onClick = {
+                        onStateChange(state)
                     },
                     state,
                     modifier = Modifier.fillMaxWidth()
@@ -379,7 +375,8 @@ private fun BookFilter(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.padding(dropdownPadding)
+            Modifier.padding(dropdownPadding),
+            verticalArrangement = Arrangement.spacedBy(dropdownVerticalSpacing)
         ) {
             for (book in allBooks) {
                 CheckboxFormLockup(

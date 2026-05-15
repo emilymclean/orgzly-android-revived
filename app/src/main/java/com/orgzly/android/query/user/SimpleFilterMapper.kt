@@ -55,6 +55,10 @@ class SimpleFilterMapper @Inject constructor() {
                 it.count { it is Condition.HasPriority } > 1,
                 "Cannot have greater than 1 Condition.HasPriority"
             )
+            rejectIf(
+                it.count { it is Condition.HasState } > 1,
+                "Cannot have greater than 1 Condition.HasState"
+            )
         }
 
         flattenedConditions?.forEach { c ->
@@ -66,7 +70,7 @@ class SimpleFilterMapper @Inject constructor() {
 
                 is Condition.HasState -> {
                     rejectIf(c.not)
-                    result.states += c.state
+                    result.state = c.state
                 }
 
                 is Condition.HasStateType -> {
@@ -154,6 +158,15 @@ class SimpleFilterMapper @Inject constructor() {
                         Condition.HasStateType(
                             StateType.DONE,
                             true
+                        )
+                    )
+                }
+
+                filter.state?.let {
+                    add(
+                        Condition.HasState(
+                            it,
+                            false
                         )
                     )
                 }
