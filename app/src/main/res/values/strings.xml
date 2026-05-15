@@ -762,6 +762,7 @@
     <string name="is_active_label">Active</string>
 
     <string name="search_filter_exclude_done">Exclude done items</string>
+    <string name="search_filter_show_as_agenda">Show as agenda</string>
     <string name="search_filter_default_sort_order">Default</string>
     <string name="search_filter_book_sort_order">Book</string>
     <string name="search_filter_title_sort_order">Title</string>

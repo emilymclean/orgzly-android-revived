@@ -10,6 +10,7 @@ import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,18 +52,33 @@ fun SearchFilterWidget(
         modifier = Modifier.then(modifier),
         verticalArrangement = Arrangement.spacedBy(1.rdp)
     ) {
-        CheckboxFormLockup(
-            filter.excludeDone,
-            {
-                onChange(
-                    filter.copy(
-                        excludeDone = it
+        Column {
+            CheckboxFormLockup(
+                filter.excludeDone,
+                {
+                    onChange(
+                        filter.copy(
+                            excludeDone = it
+                        )
                     )
-                )
-            },
-            stringResource(R.string.search_filter_exclude_done),
-            modifier = Modifier.fillMaxWidth()
-        )
+                },
+                stringResource(R.string.search_filter_exclude_done),
+                modifier = Modifier.fillMaxWidth()
+            )
+
+            CheckboxFormLockup(
+                filter.isAgenda,
+                {
+                    onChange(
+                        filter.copy(
+                            isAgenda = it
+                        )
+                    )
+                },
+                stringResource(R.string.search_filter_show_as_agenda),
+                modifier = Modifier.fillMaxWidth()
+            )
+        }
 
         SortOrder(
             filter.sortOrder,
@@ -75,6 +91,18 @@ fun SearchFilterWidget(
                     )
                 )
             }
+        )
+
+        TagsFilter(
+            filter.tags,
+            {
+                onChange(
+                    filter.copy(
+                        tags = it
+                    )
+                )
+            },
+            allTags
         )
 
         if (allBooks.size > 1) {
@@ -90,6 +118,12 @@ fun SearchFilterWidget(
         }
     }
 }
+
+private val dropdownPadding: PaddingValues
+    @Composable
+    get() = PaddingValues(
+        all = 1.rdp
+    )
 
 private data class SimpleSortOrderEntry(
     val sortOrder: SimpleSortOrder,
@@ -154,13 +188,17 @@ private fun SortOrder(
         { collapsed = it },
         modifier = Modifier.fillMaxWidth()
     ) {
-        for (entry in sortOrderEntries) {
-            SortOrderEntry(
-                entry,
-                sortOrder,
-                descending,
-                onSortOrderChange
-            )
+        Column(
+            Modifier.padding(dropdownPadding)
+        ) {
+            for (entry in sortOrderEntries) {
+                SortOrderEntry(
+                    entry,
+                    sortOrder,
+                    descending,
+                    onSortOrderChange
+                )
+            }
         }
     }
 }
@@ -226,6 +264,43 @@ private fun SortOrderEntry(
 }
 
 @Composable
+private fun TagsFilter(
+    tags: Set<String>,
+    onTagChange: (Set<String>) -> Unit,
+    allTags: List<String>
+) {
+    var collapsed by remember { mutableStateOf(true) }
+    CollapsePanel(
+        stringResource(R.string.tags),
+        collapsed,
+        { collapsed = it },
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            Modifier.padding(dropdownPadding)
+        ) {
+            for (tag in allTags) {
+                CheckboxFormLockup(
+                    tags.contains(tag),
+                    onCheckedChange = {
+                        onTagChange(
+                            when (it) {
+                                true -> tags + tag
+                                else -> tags.filterNot {
+                                    it == tag
+                                }.toSet()
+                            }
+                        )
+                    },
+                    tag,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun BookFilter(
     books: Set<String>,
     onBooksChange: (Set<String>) -> Unit,
@@ -239,7 +314,7 @@ private fun BookFilter(
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
-            Modifier.padding(1.rdp)
+            Modifier.padding(dropdownPadding)
         ) {
             for (book in allBooks) {
                 CheckboxFormLockup(
