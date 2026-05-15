@@ -147,7 +147,7 @@ class SimpleFilterMapper @Inject constructor() {
             )
         }
 
-        result.agendaDays = query.options.agendaDays
+        result.agendaDays = query.options.agendaDays.takeIf { it > 0 }
 
         return SimpleQuery(
             search,
