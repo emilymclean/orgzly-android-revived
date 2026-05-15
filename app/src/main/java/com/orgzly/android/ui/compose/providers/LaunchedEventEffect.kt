@@ -8,7 +8,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import kotlinx.coroutines.flow.Flow
 
 @Composable
-fun <T> LaunchedEvent(
+fun <T> LaunchedEventEffect(
     events: Flow<T>,
     handle: suspend (T) -> Unit
 ) {

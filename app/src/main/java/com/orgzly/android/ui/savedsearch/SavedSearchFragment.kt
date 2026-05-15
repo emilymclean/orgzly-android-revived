@@ -30,7 +30,7 @@ import com.orgzly.R
 import com.orgzly.android.App
 import com.orgzly.android.db.entity.SavedSearch
 import com.orgzly.android.ui.compose.base.ComposeFragment
-import com.orgzly.android.ui.compose.providers.LaunchedEvent
+import com.orgzly.android.ui.compose.providers.LaunchedEventEffect
 import com.orgzly.android.ui.compose.widgets.BackButton
 import com.orgzly.android.ui.compose.widgets.Icons
 import com.orgzly.android.ui.compose.widgets.OrgzlyButton
@@ -90,7 +90,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
 
         val switchToSimpleFailedMessage =
             stringResource(R.string.search_filter_unable_to_switch_to_simple)
-        LaunchedEvent(viewModel.snackbar) {
+        LaunchedEventEffect(viewModel.snackbar) {
             when (it) {
                 SavedSearchSnackbar.SWITCH_TO_SIMPLE_FAILED -> snackbarHostState.showSnackbar(
                     switchToSimpleFailedMessage
