@@ -90,11 +90,15 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
 
         val switchToSimpleFailedMessage =
             stringResource(R.string.search_filter_unable_to_switch_to_simple)
-        LaunchedEventEffect(viewModel.snackbar) {
+        LaunchedEventEffect(viewModel.events) {
             when (it) {
-                SavedSearchSnackbar.SWITCH_TO_SIMPLE_FAILED -> snackbarHostState.showSnackbar(
-                    switchToSimpleFailedMessage
-                )
+                is SavedSearchEvent.Snackbar -> when (it.snackbar) {
+                    SavedSearchSnackbar.SWITCH_TO_SIMPLE_FAILED -> snackbarHostState.showSnackbar(
+                        switchToSimpleFailedMessage
+                    )
+                }
+                is SavedSearchEvent.SaveNew -> mListener?.onSavedSearchCreateRequest(it.search)
+                is SavedSearchEvent.SaveUpdate -> mListener?.onSavedSearchUpdateRequest(it.search)
             }
         }
 
@@ -133,6 +137,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                             stringResource(R.string.name)
                         )
                     },
+                    enabled = state.editable,
                     isError = !state.isNameValid
                 )
 
@@ -146,6 +151,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                                     stringResource(R.string.query)
                                 )
                             },
+                            enabled = state.editable,
                             isError = !state.isQueryValid
                         )
                     }
@@ -158,6 +164,7 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                                     stringResource(R.string.options_menu_item_search)
                                 )
                             },
+                            enabled = state.editable,
                             isError = !state.isQueryValid
                         )
                     }
@@ -170,7 +177,8 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                     },
                     modifier = Modifier
                         .animateContentSize()
-                        .align(Alignment.End)
+                        .align(Alignment.End),
+                    enabled = state.editable
                 ) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(1.rdp),
@@ -195,15 +203,15 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                         mode.filter,
                         viewModel::updateFilter,
                         state.allTags,
-                        state.allBooks
+                        state.allBooks,
+                        enabled = state.editable
                     )
                 }
 
                 OrgzlyButton(
-                    onClick = {
-
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                    onClick = viewModel::save,
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = state.editable
                 ) {
                     Text(stringResource(R.string.save))
                 }

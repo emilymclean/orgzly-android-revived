@@ -67,7 +67,8 @@ fun SearchFilterWidget(
     onChange: (SimpleFilter) -> Unit,
     allTags: List<String>,
     allBooks: List<String>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true,
 ) {
     Column(
         modifier = Modifier.then(modifier),
@@ -84,7 +85,8 @@ fun SearchFilterWidget(
                     )
                 },
                 stringResource(R.string.search_filter_exclude_done),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled
             )
 
             AgendaOptions(
@@ -95,7 +97,8 @@ fun SearchFilterWidget(
                             agendaDays = it
                         )
                     )
-                }
+                },
+                enabled = enabled
             )
         }
 
@@ -109,7 +112,8 @@ fun SearchFilterWidget(
                         sortDescending = descending
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
 
         StateFilter(
@@ -120,7 +124,8 @@ fun SearchFilterWidget(
                         state = it
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
 
         TagsFilter(
@@ -132,7 +137,8 @@ fun SearchFilterWidget(
                     )
                 )
             },
-            allTags
+            allTags,
+            enabled = enabled
         )
 
         if (allBooks.size > 1) {
@@ -143,7 +149,8 @@ fun SearchFilterWidget(
                         books = it
                     )
                 ) },
-                allBooks
+                allBooks,
+                enabled = enabled
             )
         }
 
@@ -156,7 +163,8 @@ fun SearchFilterWidget(
                         event = it
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
 
         DateFilter(
@@ -168,7 +176,8 @@ fun SearchFilterWidget(
                         scheduled = it
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
 
         DateFilter(
@@ -180,7 +189,8 @@ fun SearchFilterWidget(
                         deadline = it
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
 
         DateFilter(
@@ -192,7 +202,8 @@ fun SearchFilterWidget(
                         closed = it
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
 
         DateFilter(
@@ -204,7 +215,8 @@ fun SearchFilterWidget(
                         created = it
                     )
                 )
-            }
+            },
+            enabled = enabled
         )
     }
 }
@@ -254,7 +266,8 @@ private fun FilterCollapsePanel(
 @Composable
 fun AgendaOptions(
     agendaDays: Int?,
-    onChange: (Int?) -> Unit
+    onChange: (Int?) -> Unit,
+    enabled: Boolean = true
 ) {
     val textFieldState = remember { TextFieldState("${agendaDays ?: ""}") }
     var hasHoistedFirst by remember { mutableStateOf(false) }
@@ -290,7 +303,8 @@ fun AgendaOptions(
                 )
             },
             stringResource(R.string.search_filter_show_as_agenda),
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            enabled = enabled
         )
         agendaDays?.let { agendaDays ->
             Row(
@@ -310,7 +324,7 @@ fun AgendaOptions(
                             onChange(it)
                         }
                     },
-                    enabled = agendaDays > 0
+                    enabled = agendaDays > 0 && enabled
                 ) {
                     Icon(
                         painterIcon(Icons.SUBTRACT),
@@ -352,6 +366,7 @@ fun AgendaOptions(
                     textStyle = LocalTextStyle.current.copy(
                         textAlign = TextAlign.Center
                     ),
+                    enabled = enabled
                 )
 
                 OrgzlyTonalButton(
@@ -361,7 +376,7 @@ fun AgendaOptions(
                             onChange(it)
                         }
                     },
-                    enabled = agendaDays < 100
+                    enabled = agendaDays < 100 && enabled
                 ) {
                     Icon(
                         painterIcon(Icons.ADD),
@@ -426,7 +441,8 @@ private val sortOrderEntries = listOf(
 private fun SortOrder(
     sortOrder: SimpleSortOrder,
     descending: Boolean,
-    onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit
+    onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
 
     var collapsed by remember { mutableStateOf(true) }
@@ -446,7 +462,8 @@ private fun SortOrder(
                     entry,
                     sortOrder,
                     descending,
-                    onSortOrderChange
+                    onSortOrderChange,
+                    enabled = enabled
                 )
             }
         }
@@ -458,7 +475,8 @@ private fun SortOrderEntry(
     entry: SimpleSortOrderEntry,
     sortOrder: SimpleSortOrder,
     descending: Boolean,
-    onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit
+    onSortOrderChange: (SimpleSortOrder, Boolean) -> Unit,
+    enabled: Boolean = true
 ) {
     val callback = remember(onSortOrderChange) { {
         onSortOrderChange(
@@ -479,7 +497,8 @@ private fun SortOrderEntry(
             stringResource(entry.label),
             modifier = Modifier
                 .weight(1f)
-                .animateContentSize()
+                .animateContentSize(),
+            enabled = enabled
         )
 
         val rotationAnimation by animateFloatAsState(
@@ -499,7 +518,10 @@ private fun SortOrderEntry(
                     Icons.ARROW_DOWNWARD
                 ),
                 modifier = Modifier
-                    .noRippleClickable(onClick = callback)
+                    .noRippleClickable(
+                        enabled = enabled,
+                        onClick = callback
+                    )
                     .rotate(rotationAnimation),
                 contentDescription = stringResource(
                     when (descending) {
@@ -516,7 +538,8 @@ private fun SortOrderEntry(
 private fun TagsFilter(
     tags: Set<String>,
     onTagChange: (Set<String>) -> Unit,
-    allTags: List<String>
+    allTags: List<String>,
+    enabled: Boolean = true
 ) {
     var collapsed by remember { mutableStateOf(true) }
     FilterCollapsePanel(
@@ -546,7 +569,8 @@ private fun TagsFilter(
                         )
                     },
                     tag,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = enabled
                 )
             }
         }
@@ -557,6 +581,7 @@ private fun TagsFilter(
 private fun StateFilter(
     currentState: String?,
     onStateChange: (String?) -> Unit,
+    enabled: Boolean = true
 ) {
     val allStatesString by appPreference { AppPreferences.states(it) }
     val allStates = remember(allStatesString) {
@@ -584,7 +609,8 @@ private fun StateFilter(
                     onStateChange(null)
                 },
                 stringResource(R.string.search_filter_state_none),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled
             )
             for (state in allStates) {
                 RadioButtonFormLockup(
@@ -593,7 +619,8 @@ private fun StateFilter(
                         onStateChange(state)
                     },
                     state,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = enabled
                 )
             }
         }
@@ -604,7 +631,8 @@ private fun StateFilter(
 private fun BookFilter(
     books: Set<String>,
     onBooksChange: (Set<String>) -> Unit,
-    allBooks: List<String>
+    allBooks: List<String>,
+    enabled: Boolean = true
 ) {
     var collapsed by remember { mutableStateOf(true) }
     FilterCollapsePanel(
@@ -632,7 +660,8 @@ private fun BookFilter(
                         )
                     },
                     book,
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = enabled
                 )
             }
         }
@@ -652,7 +681,8 @@ private val relativeDateOptionLabels = listOf(
 private fun DateFilter(
     title: String,
     current: RelativeDateOption?,
-    onChange: (RelativeDateOption?) -> Unit
+    onChange: (RelativeDateOption?) -> Unit,
+    enabled: Boolean = true
 ) {
     var collapsed by remember { mutableStateOf(true) }
     FilterCollapsePanel(
@@ -672,7 +702,8 @@ private fun DateFilter(
                     onChange(null)
                 },
                 stringResource(R.string.search_filter_state_none),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                enabled = enabled
             )
             for ((option, label) in relativeDateOptionLabels) {
                 RadioButtonFormLockup(
@@ -681,7 +712,8 @@ private fun DateFilter(
                         onChange(option)
                     },
                     stringResource(label),
-                    modifier = Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = enabled
                 )
             }
         }

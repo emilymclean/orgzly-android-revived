@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.viewModelScope
 import com.orgzly.android.data.DataRepository
+import com.orgzly.android.db.entity.SavedSearch
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.user.SimpleFilterMapper
 import com.orgzly.android.query.user.InternalQueryBuilder
@@ -24,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -33,8 +35,9 @@ import kotlinx.coroutines.withContext
 @Immutable
 data class SavedSearchModel(
     val mode: Mode = Mode.None,
-    val isNameValid: Boolean = false,
+    val isNameValid: Boolean = true,
     val isQueryValid: Boolean = true,
+    val editable: Boolean = true,
     val allTags: List<String> = emptyList(),
     val allBooks: List<String> = emptyList()
 ) {
@@ -57,12 +60,24 @@ enum class SavedSearchSnackbar {
     SWITCH_TO_SIMPLE_FAILED
 }
 
+sealed interface SavedSearchEvent {
+    data class SaveNew(
+        val search: SavedSearch
+    ): SavedSearchEvent
+    data class SaveUpdate(
+        val search: SavedSearch
+    ): SavedSearchEvent
+    data class Snackbar(
+        val snackbar: SavedSearchSnackbar
+    ): SavedSearchEvent
+}
+
 class SavedSearchViewModel @AssistedInject constructor(
     private val dataRepository: DataRepository,
     private val simpleFilterMapper: SimpleFilterMapper,
     private val queryParser: InternalQueryParser,
     private val queryBuilder: InternalQueryBuilder,
-    @Assisted private val existingSearchId: Long?
+    @Assisted private var existingSearchId: Long?
 ): CommonViewModel() {
 
     companion object {
@@ -79,6 +94,8 @@ class SavedSearchViewModel @AssistedInject constructor(
         }
     }
 
+    private var existingSearchPosition: Int? = null
+
     private val isSimpleSearch = MutableStateFlow<Boolean?>(null)
 
     private var currentSimpleFilter = MutableStateFlow(SimpleFilter())
@@ -91,6 +108,9 @@ class SavedSearchViewModel @AssistedInject constructor(
     private val books = dataRepository.getBooksLiveData().asFlow().mapLatest {
         it.map { it.book.name }
     }
+
+    private val shouldShowValidationErrors = MutableStateFlow(false)
+    private val editable = MutableStateFlow(true)
 
     private val isNameValid = snapshotFlow { nameField.text.toString() }.mapLatest {
         if (it.isBlank()) return@mapLatest false
@@ -108,14 +128,7 @@ class SavedSearchViewModel @AssistedInject constructor(
         isSimpleSearch,
         currentSimpleFilter
     ) { advancedQueryField, simpleSearchField, isSimpleSearch, currentSimpleFilter ->
-        when (isSimpleSearch) {
-            null -> false
-            true -> queryBuilder.build(simpleFilterMapper.toQuery(
-                simpleSearchField,
-                currentSimpleFilter
-            )).isNotBlank()
-            else -> advancedQueryField.isNotBlank()
-        }
+        getQueryString().isNotBlank()
     }.shareIn(viewModelScope, SharingStarted.WhileSubscribed())
 
     val state = combine(
@@ -123,6 +136,8 @@ class SavedSearchViewModel @AssistedInject constructor(
         currentSimpleFilter,
         isNameValid,
         isQueryValid,
+        shouldShowValidationErrors,
+        editable,
         tags,
         books,
     ) {
@@ -130,6 +145,8 @@ class SavedSearchViewModel @AssistedInject constructor(
         currentSimpleFilter,
         isNameValid,
         isQueryValid,
+        shouldShowValidationErrors,
+        editable,
         tags,
         books ->
 
@@ -141,8 +158,9 @@ class SavedSearchViewModel @AssistedInject constructor(
                 )
                 else -> SavedSearchModel.Mode.Advanced
             },
-            isNameValid,
-            isQueryValid,
+            !shouldShowValidationErrors || isNameValid,
+            !shouldShowValidationErrors || isQueryValid,
+            editable,
             tags,
             books
         )
@@ -152,16 +170,18 @@ class SavedSearchViewModel @AssistedInject constructor(
         SavedSearchModel()
     )
 
-    private val _snackbar = EventFlow<SavedSearchSnackbar>()
-    val snackbar = _snackbar.asFlow(viewModelScope)
+    private val _events = EventFlow<SavedSearchEvent>()
+    val events = _events.asFlow(viewModelScope)
 
     init {
-        existingSearchId?.let {
+        existingSearchId?.let { existingSearchId ->
+            shouldShowValidationErrors.value = true
             viewModelScope.launch {
                 val existing = withContext(Dispatchers.IO) {
                     dataRepository.getSavedSearch(existingSearchId)
                 } ?: return@launch
                 nameField.setTextAndPlaceCursorAtEnd(existing.name)
+                existingSearchPosition = existing.position
 
                 try {
                     val parsed = simpleFilterMapper.fromQuery(
@@ -175,7 +195,18 @@ class SavedSearchViewModel @AssistedInject constructor(
                     isSimpleSearch.value = false
                 }
             }
+        } ?: run {
+            isSimpleSearch.value = true
         }
+    }
+
+    private fun getQueryString(): String = when (isSimpleSearch.value) {
+        null -> ""
+        true -> queryBuilder.build(simpleFilterMapper.toQuery(
+            simpleSearchField.text.toString(),
+            currentSimpleFilter.value
+        ))
+        else -> advancedQueryField.text.toString()
     }
 
     fun switchSearchStyle() {
@@ -200,7 +231,9 @@ class SavedSearchViewModel @AssistedInject constructor(
                 } catch (e: Exception) {
                     Log.e(TAG, "Cannot swap to simple search", e)
                     viewModelScope.launch {
-                        _snackbar.send(SavedSearchSnackbar.SWITCH_TO_SIMPLE_FAILED)
+                        _events.send(SavedSearchEvent.Snackbar(
+                            SavedSearchSnackbar.SWITCH_TO_SIMPLE_FAILED
+                        ))
                     }
                 }
             }
@@ -209,6 +242,31 @@ class SavedSearchViewModel @AssistedInject constructor(
 
     fun updateFilter(filter: SimpleFilter) {
         this.currentSimpleFilter.value = filter
+    }
+
+    fun save() {
+        editable.value = false
+        shouldShowValidationErrors.value = true
+        viewModelScope.launch {
+            val valid = isNameValid.first() && isQueryValid.first()
+            if (!valid) {
+                editable.value = true
+                return@launch
+            }
+
+            val savedSearch = SavedSearch(
+                existingSearchId ?: 0,
+                nameField.text.toString(),
+                getQueryString(),
+                existingSearchPosition ?: 0
+            )
+            _events.send(
+                when (existingSearchId == null) {
+                    true -> SavedSearchEvent.SaveNew(savedSearch)
+                    else -> SavedSearchEvent.SaveUpdate(savedSearch)
+                }
+            )
+        }
     }
 
     @AssistedFactory
