@@ -12,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -108,6 +109,18 @@ class SavedSearchFragment: ComposeFragment(), DrawerItem {
                     stringResource(R.string.search),
                     navigationIcon = {
                         BackButton()
+                    },
+                    actions = {
+                        IconButton(
+                            onClick = {
+                                viewModel.save()
+                            }
+                        ) {
+                            Icon(
+                                painterIcon(Icons.SAVE),
+                                contentDescription = stringResource(R.string.save)
+                            )
+                        }
                     }
                 )
             },

@@ -120,7 +120,7 @@ class SavedSearchViewModel @AssistedInject constructor(
         if (existing.isNotEmpty() && existing.first().id != existingSearchId) return@mapLatest false
 
         true
-    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed())
+    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
     private val isQueryValid = combine(
         snapshotFlow { advancedQueryField.text.toString() },
@@ -129,7 +129,7 @@ class SavedSearchViewModel @AssistedInject constructor(
         currentSimpleFilter
     ) { advancedQueryField, simpleSearchField, isSimpleSearch, currentSimpleFilter ->
         getQueryString().isNotBlank()
-    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed())
+    }.shareIn(viewModelScope, SharingStarted.WhileSubscribed(), replay = 1)
 
     val state = combine(
         isSimpleSearch,

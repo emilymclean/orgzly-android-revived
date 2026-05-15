@@ -17,6 +17,7 @@ enum class Icons {
     SWAP,
     ADD,
     SUBTRACT,
+    SAVE,
 }
 
 private val Icons.resource: Int
@@ -29,6 +30,7 @@ private val Icons.resource: Int
         Icons.SWAP -> R.drawable.ic_swap_vert
         Icons.ADD -> R.drawable.ic_add
         Icons.SUBTRACT -> R.drawable.ic_subtract
+        Icons.SAVE -> R.drawable.ic_check_white_24dp
     }
 
 /**
