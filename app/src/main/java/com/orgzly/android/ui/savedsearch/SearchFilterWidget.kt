@@ -12,7 +12,15 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.text.input.InputTransformation
+import androidx.compose.foundation.text.input.KeyboardActionHandler
+import androidx.compose.foundation.text.input.OutputTransformation
+import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.insert
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,9 +31,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -42,10 +53,11 @@ import com.orgzly.android.ui.compose.widgets.BaseCollapsePanel
 import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
 import com.orgzly.android.ui.compose.widgets.CollapseHeaderScaffold
 import com.orgzly.android.ui.compose.widgets.Icons
+import com.orgzly.android.ui.compose.widgets.OrgzlyBasicTextField
 import com.orgzly.android.ui.compose.widgets.OrgzlyTonalButton
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
+import com.orgzly.android.ui.compose.widgets.TextFieldHoistEffect
 import com.orgzly.android.ui.compose.widgets.painterIcon
-import kotlin.text.equals
 
 @Composable
 fun SearchFilterWidget(
@@ -242,10 +254,19 @@ fun AgendaOptions(
     agendaDays: Int?,
     onChange: (Int?) -> Unit
 ) {
+    val textFieldState = remember { TextFieldState("${agendaDays ?: 7}") }
+    TextFieldHoistEffect(textFieldState) {
+        onChange(it.toIntOrNull() ?: 0)
+    }
+
     Column {
         CheckboxFormLockup(
             agendaDays != null,
             {
+                if (it) {
+                    textFieldState.setTextAndPlaceCursorAtEnd("7")
+                }
+
                 onChange(
                     when (it) {
                         true -> 7
@@ -263,7 +284,10 @@ fun AgendaOptions(
             ) {
                 OrgzlyTonalButton(
                     onClick = {
-                        onChange((agendaDays - 1).coerceAtLeast(0))
+                        (agendaDays - 1).coerceAtLeast(0).let {
+                            textFieldState.setTextAndPlaceCursorAtEnd("$it")
+                            onChange(it)
+                        }
                     },
                     enabled = agendaDays > 0
                 ) {
@@ -273,20 +297,45 @@ fun AgendaOptions(
                     )
                 }
 
-                Text(
-                    pluralStringResource(
-                        R.plurals.search_filter_agenda_days,
-                        agendaDays,
-                        agendaDays
-                    ),
-                    textAlign = TextAlign.Center,
+                val resources = LocalResources.current
+                val focusManager = LocalFocusManager.current
+                OrgzlyBasicTextField(
+                    textFieldState,
                     modifier = Modifier.weight(1f),
-                    style = MaterialTheme.typography.bodyMedium
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number,
+                        imeAction = ImeAction.Done
+                    ),
+                    onKeyboardAction = KeyboardActionHandler {
+                        focusManager.clearFocus()
+                    },
+                    inputTransformation = InputTransformation {
+                        if (!asCharSequence().all { it.isDigit() }) {
+                            revertAllChanges()
+                        }
+                    },
+                    outputTransformation = OutputTransformation {
+                        val number = asCharSequence().toString().toIntOrNull() ?: 0
+                        val markup = resources.getQuantityString(
+                            R.plurals.search_filter_agenda_days,
+                            number,
+                            number
+                        ).split(asCharSequence().toString())
+
+                        if (markup.size > 1) insert(0, markup.first())
+                        insert(length, markup.last())
+                    },
+                    textStyle = LocalTextStyle.current.copy(
+                        textAlign = TextAlign.Center
+                    ),
                 )
 
                 OrgzlyTonalButton(
                     onClick = {
-                        onChange((agendaDays + 1).coerceAtMost(30))
+                        (agendaDays + 1).let {
+                            textFieldState.setTextAndPlaceCursorAtEnd("$it")
+                            onChange(it)
+                        }
                     },
                     enabled = agendaDays < 30
                 ) {
