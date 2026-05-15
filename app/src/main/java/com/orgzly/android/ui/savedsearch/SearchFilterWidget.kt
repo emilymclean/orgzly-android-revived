@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import cl.emilym.compose.units.rdp
@@ -33,7 +36,9 @@ import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.SimpleSortOrder
 import com.orgzly.android.ui.compose.modifiers.noRippleClickable
 import com.orgzly.android.ui.compose.providers.appPreference
+import com.orgzly.android.ui.compose.widgets.BaseCollapsePanel
 import com.orgzly.android.ui.compose.widgets.CheckboxFormLockup
+import com.orgzly.android.ui.compose.widgets.CollapseHeaderScaffold
 import com.orgzly.android.ui.compose.widgets.CollapsePanel
 import com.orgzly.android.ui.compose.widgets.Icons
 import com.orgzly.android.ui.compose.widgets.RadioButtonFormLockup
@@ -198,6 +203,40 @@ private val dropdownPadding: PaddingValues
 
 private val dropdownVerticalSpacing: Dp = 0.dp
 
+@Composable
+private fun FilterCollapsePanel(
+    title: String,
+    collapsed: Boolean,
+    onCollapseChange: (Boolean) -> Unit,
+    hasActiveFilters: Boolean,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit
+) {
+    BaseCollapsePanel(
+        collapsed,
+        onCollapseChange,
+        modifier,
+        {
+            CollapseHeaderScaffold(
+                it,
+            ) {
+                Column(Modifier.padding(1.rdp)) {
+                    Text(
+                        title,
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = when (hasActiveFilters) {
+                            true -> FontWeight.Bold
+                            else -> null
+                        }
+                    )
+                }
+            }
+        }
+    ) {
+        content()
+    }
+}
+
 private data class SimpleSortOrderEntry(
     val sortOrder: SimpleSortOrder,
     @field:StringRes
@@ -255,10 +294,11 @@ private fun SortOrder(
 ) {
 
     var collapsed by remember { mutableStateOf(true) }
-    CollapsePanel(
+    FilterCollapsePanel(
         stringResource(R.string.sort_order),
         collapsed,
         { collapsed = it },
+        sortOrder != SimpleSortOrder.DEFAULT,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -343,10 +383,11 @@ private fun TagsFilter(
     allTags: List<String>
 ) {
     var collapsed by remember { mutableStateOf(true) }
-    CollapsePanel(
+    FilterCollapsePanel(
         stringResource(R.string.tags),
         collapsed,
         { collapsed = it },
+        tags.isNotEmpty(),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -390,10 +431,11 @@ private fun StateFilter(
     }
 
     var collapsed by remember { mutableStateOf(true) }
-    CollapsePanel(
+    FilterCollapsePanel(
         stringResource(R.string.states),
         collapsed,
         { collapsed = it },
+        currentState != null,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -429,10 +471,11 @@ private fun BookFilter(
     allBooks: List<String>
 ) {
     var collapsed by remember { mutableStateOf(true) }
-    CollapsePanel(
+    FilterCollapsePanel(
         stringResource(R.string.notebooks),
         collapsed,
         { collapsed = it },
+        books.isNotEmpty(),
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -463,7 +506,7 @@ private fun BookFilter(
 private val relativeDateOptionLabels = listOf(
     RelativeDateOption.TODAY to R.string.search_filter_date_today,
     RelativeDateOption.TOMORROW to R.string.search_filter_date_tomorrow,
-    RelativeDateOption.FUTURE to R.string.search_filter_date_tomorrow,
+    RelativeDateOption.FUTURE to R.string.search_filter_date_future,
     RelativeDateOption.PAST to R.string.search_filter_date_past,
     RelativeDateOption.NEXT_7_DAYS to R.string.search_filter_date_next_seven_days,
     RelativeDateOption.NEXT_30_DAYS to R.string.search_filter_date_next_thirty_days,
@@ -476,10 +519,11 @@ private fun DateFilter(
     onChange: (RelativeDateOption?) -> Unit
 ) {
     var collapsed by remember { mutableStateOf(true) }
-    CollapsePanel(
+    FilterCollapsePanel(
         title,
         collapsed,
         { collapsed = it },
+        current != null,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -498,7 +542,7 @@ private fun DateFilter(
                 RadioButtonFormLockup(
                     current == option,
                     onClick = {
-                        onChange(current)
+                        onChange(option)
                     },
                     stringResource(label),
                     modifier = Modifier.fillMaxWidth()

@@ -52,7 +52,7 @@ fun CollapsePanel(
 }
 
 @Composable
-private fun BaseCollapsePanel(
+fun BaseCollapsePanel(
     collapsed: Boolean,
     onCollapseChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -80,7 +80,7 @@ private fun BaseCollapsePanel(
 }
 
 @Composable
-private fun CollapseHeaderScaffold(
+fun CollapseHeaderScaffold(
     collapsed: Boolean,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit
@@ -98,8 +98,8 @@ private fun CollapseHeaderScaffold(
 
         val rotationAnimation by animateFloatAsState(
             when (collapsed) {
-                true -> 0f
-                else -> 180f
+                true -> -90f
+                else -> 0f
             }
         )
         Icon(
