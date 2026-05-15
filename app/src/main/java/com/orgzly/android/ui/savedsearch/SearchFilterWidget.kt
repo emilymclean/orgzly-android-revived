@@ -267,7 +267,6 @@ private fun SortOrderEntry(
                     Icons.ARROW_DOWNWARD
                 ),
                 modifier = Modifier
-                    .padding(end = 1.rdp)
                     .noRippleClickable(onClick = callback)
                     .rotate(rotationAnimation),
                 contentDescription = stringResource(
