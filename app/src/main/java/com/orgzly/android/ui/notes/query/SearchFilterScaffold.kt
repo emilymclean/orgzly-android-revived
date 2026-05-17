@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
@@ -42,7 +44,6 @@ fun SearchFilterScaffold(
     content: @Composable () -> Unit
 ) {
     var sheetVisible by remember { mutableStateOf(false) }
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         Modifier.fillMaxSize()
@@ -79,7 +80,9 @@ fun SearchFilterScaffold(
                             modifier = Modifier.fillMaxSize()
                         ) {
                             Column(
-                                Modifier.padding(1.rdp),
+                                Modifier
+                                    .verticalScroll(rememberScrollState())
+                                    .padding(1.rdp),
                                 verticalArrangement = Arrangement.spacedBy(1.rdp)
                             ) {
                                 SearchFilterWidget(
