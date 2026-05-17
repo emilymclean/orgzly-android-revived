@@ -8,13 +8,12 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
@@ -25,18 +24,20 @@ import com.orgzly.android.App
 import com.orgzly.android.db.entity.NoteView
 import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.sync.SyncRunner
+import com.orgzly.android.ui.DisplayManager
 import com.orgzly.android.ui.OnViewHolderClickListener
 import com.orgzly.android.ui.SelectableItemAdapter
 import com.orgzly.android.ui.compose.base.createFragmentComposeView
-import com.orgzly.android.ui.compose.modifiers.scaffoldPadding
-import com.orgzly.android.ui.main.setupSearchView
 import com.orgzly.android.ui.notes.ItemGestureDetector
 import com.orgzly.android.ui.notes.NoteItemViewHolder
 import com.orgzly.android.ui.notes.NotePopup
+import com.orgzly.android.ui.notes.query.QueryEvent
 import com.orgzly.android.ui.notes.query.QueryFragment
 import com.orgzly.android.ui.notes.query.QueryViewModel
 import com.orgzly.android.ui.notes.query.QueryViewModel.Companion.APP_BAR_DEFAULT_MODE
 import com.orgzly.android.ui.notes.query.QueryViewModel.Companion.APP_BAR_SELECTION_MODE
+import com.orgzly.android.ui.notes.query.QueryViewModelFactory
+import com.orgzly.android.ui.notes.query.QueryViewModelOwner
 import com.orgzly.android.ui.notes.query.SearchFilterScaffold
 import com.orgzly.android.ui.settings.SettingsActivity
 import com.orgzly.android.ui.util.ActivityUtils
@@ -52,6 +53,13 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
     private lateinit var binding: FragmentQuerySearchBinding
 
     private lateinit var viewAdapter: SearchAdapter
+
+    override val viewModel: QueryViewModel by viewModels {
+        QueryViewModelFactory.provideFactory(
+            viewModelFactory,
+            QueryViewModelOwner.SEARCH
+        )
+    }
 
     private val appBarBackPressHandler = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
@@ -130,6 +138,17 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
 
         viewModel.state.collectWithLifecycle {
             binding.topToolbar.subtitle = it.query
+        }
+
+        viewModel.events.collectWithLifecycle { event ->
+            when (event) {
+                is QueryEvent.ChangeQueryView -> DisplayManager.displayQuery(
+                    requireActivity().supportFragmentManager,
+                    event.query,
+                    currentQueryName,
+                    false
+                )
+            }
         }
 
         binding.swipeContainer.setup()

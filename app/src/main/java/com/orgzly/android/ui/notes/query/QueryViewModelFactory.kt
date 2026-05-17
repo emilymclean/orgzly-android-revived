@@ -7,15 +7,18 @@ import dagger.assisted.AssistedFactory
 @AssistedFactory
 interface QueryViewModelFactory : ViewModelProvider.Factory {
 
-    fun create(): QueryViewModel
+    fun create(
+        owner: QueryViewModelOwner
+    ): QueryViewModel
 
     companion object {
         fun provideFactory(
             assistedFactory: QueryViewModelFactory,
+            owner: QueryViewModelOwner,
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
-                return assistedFactory.create() as T
+                return assistedFactory.create(owner) as T
             }
         }
     }

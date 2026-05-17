@@ -37,11 +37,7 @@ abstract class QueryFragment :
     @Inject
     lateinit var viewModelFactory: QueryViewModelFactory
 
-    protected val viewModel: QueryViewModel by viewModels {
-        QueryViewModelFactory.provideFactory(
-            viewModelFactory,
-        )
-    }
+    protected abstract val viewModel: QueryViewModel
 
     override fun getCurrentListener(): Listener? {
         return listener

@@ -1,11 +1,8 @@
 package com.orgzly.android.ui.notes.query
 
 import androidx.compose.runtime.Immutable
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
-import androidx.lifecycle.map
-import androidx.lifecycle.switchMap
 import androidx.lifecycle.viewModelScope
 import com.orgzly.BuildConfig
 import com.orgzly.android.data.DataRepository
@@ -14,24 +11,24 @@ import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.user.InternalQueryBuilder
 import com.orgzly.android.query.user.InternalQueryParser
 import com.orgzly.android.query.user.SimpleFilterMapper
-import com.orgzly.android.query.user.UnsupportedSimpleFilterException
 import com.orgzly.android.ui.AppBar
 import com.orgzly.android.ui.CommonViewModel
-import com.orgzly.android.ui.util.flatCombineLatest
+import com.orgzly.android.ui.compose.base.EventFlow
 import com.orgzly.android.util.LogUtils
+import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import javax.inject.Inject
+
+enum class QueryViewModelOwner {
+    AGENDA, SEARCH
+}
 
 @Immutable
 data class QueryState(
@@ -56,11 +53,16 @@ data class QueryState(
 
 }
 
+sealed interface QueryEvent {
+    data class ChangeQueryView(val query: String): QueryEvent
+}
+
 class QueryViewModel @AssistedInject constructor(
     private val dataRepository: DataRepository,
     private val queryParser: InternalQueryParser,
     private val queryBuilder: InternalQueryBuilder,
-    private val filterMapper: SimpleFilterMapper
+    private val filterMapper: SimpleFilterMapper,
+    @Assisted private val owner: QueryViewModelOwner
 ) : CommonViewModel() {
 
     enum class ViewState {
@@ -102,6 +104,9 @@ class QueryViewModel @AssistedInject constructor(
             },
         )
     }.state(QueryState.default)
+
+    private val _events = EventFlow<QueryEvent>()
+    val events = _events.asFlow(viewModelScope)
 
     @Deprecated("Use state")
     val viewState = state.mapLatest {
@@ -146,12 +151,25 @@ class QueryViewModel @AssistedInject constructor(
                     query.value ?: return@launch
                 )).search
 
-                query.value = queryBuilder.build(
+                val update = queryBuilder.build(
                     filterMapper.toQuery(
                         search,
                         filter.value ?: SimpleFilter()
                     )
                 )
+
+                val hasAgenda = filter.value?.agendaDays != null
+                when (owner) {
+                    QueryViewModelOwner.SEARCH if hasAgenda -> {
+                        _events.send(QueryEvent.ChangeQueryView(update))
+                    }
+                    QueryViewModelOwner.AGENDA if !hasAgenda -> {
+                        _events.send(QueryEvent.ChangeQueryView(update))
+                    }
+                    else -> {
+                        query.value = update
+                    }
+                }
             }
         }
     }
