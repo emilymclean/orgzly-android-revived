@@ -131,6 +131,10 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
         }
 
         binding.swipeContainer.setup()
+
+        viewModel.state.collectWithLifecycle {
+            binding.topToolbar.subtitle = it.query
+        }
     }
 
     override fun onAttach(context: Context) {
@@ -181,7 +185,6 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
             }
 
             title = currentQueryName ?: getString(R.string.agenda)
-            subtitle = currentQuery
         }
     }
 

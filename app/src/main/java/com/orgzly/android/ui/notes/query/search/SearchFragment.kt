@@ -128,6 +128,10 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
             }))
         }
 
+        viewModel.state.collectWithLifecycle {
+            binding.topToolbar.subtitle = it.query
+        }
+
         binding.swipeContainer.setup()
     }
 
@@ -174,14 +178,11 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
                 true
             }
 
-            requireActivity().setupSearchView(menu)
-
             setOnClickListener {
                 binding.topToolbar.menu.findItem(R.id.search_view)?.expandActionView()
             }
 
             title = currentQueryName ?: getString(R.string.search)
-            subtitle = currentQuery
         }
     }
 
