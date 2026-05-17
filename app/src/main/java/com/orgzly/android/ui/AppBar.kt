@@ -19,13 +19,13 @@ class AppBar(var modes: Map<Int, Int?>) {
                 toMode(1)
             } else {
                 // Keep mode
-                mode.postValue(mode.value)
+                mode.value = mode.value
             }
         }
     }
 
     fun toMode(id: Int) {
-        this.mode.postValue(id)
+        this.mode.value = id
         _currentMode.value = id
     }
 
