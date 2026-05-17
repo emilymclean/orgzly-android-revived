@@ -1,5 +1,6 @@
 package com.orgzly.android.ui.notes.query.agenda
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -13,6 +14,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.orgzly.BuildConfig
 import com.orgzly.R
+import com.orgzly.android.App
 import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.sync.SyncRunner
 import com.orgzly.android.ui.OnViewHolderClickListener
@@ -107,6 +109,11 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
         }
 
         binding.swipeContainer.setup()
+    }
+
+    override fun onAttach(context: Context) {
+        super.onAttach(context)
+        App.appComponent.inject(this)
     }
 
     override fun onResume() {
@@ -211,10 +218,6 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
         super.onActivityCreated(savedInstanceState)
 
         if (BuildConfig.LOG_DEBUG) LogUtils.d(TAG, savedInstanceState)
-
-        val factory = QueryViewModelFactory.forQuery(dataRepository)
-
-        viewModel = ViewModelProvider(this, factory).get(QueryViewModel::class.java)
 
         viewModel.viewState.observe(viewLifecycleOwner, Observer { state ->
             if (BuildConfig.LOG_DEBUG) LogUtils.d(TAG, "Observed load state: $state")

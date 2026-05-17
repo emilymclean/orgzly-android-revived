@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import com.orgzly.R
 import com.orgzly.android.NotesOrgExporter
@@ -13,6 +14,7 @@ import com.orgzly.android.ui.drawer.DrawerItem
 import com.orgzly.android.ui.main.SharedMainActivityViewModel
 import com.orgzly.android.ui.notes.NotesFragment
 import com.orgzly.android.ui.settings.SettingsActivity
+import javax.inject.Inject
 
 /**
  * Displays query results.
@@ -32,7 +34,14 @@ abstract class QueryFragment :
 
     protected lateinit var sharedMainActivityViewModel: SharedMainActivityViewModel
 
-    protected lateinit var viewModel: QueryViewModel
+    @Inject
+    lateinit var viewModelFactory: QueryViewModelFactory
+
+    protected val viewModel: QueryViewModel by viewModels {
+        QueryViewModelFactory.provideFactory(
+            viewModelFactory,
+        )
+    }
 
     override fun getCurrentListener(): Listener? {
         return listener
