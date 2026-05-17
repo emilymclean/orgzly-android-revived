@@ -13,7 +13,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -37,7 +41,7 @@ fun SearchFilterScaffold(
     allBooks: List<String>,
     content: @Composable () -> Unit
 ) {
-    val sheetState = rememberModalBottomSheetState()
+    var sheetVisible by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
@@ -53,11 +57,12 @@ fun SearchFilterScaffold(
             ) {
                 OrgzlyButton(
                     onClick = {
-                        coroutineScope.launch { sheetState.show() }
+                        sheetVisible = true
                     },
                     Modifier
                         .align(Alignment.BottomCenter)
                         .padding(horizontal = 1.rdp)
+                        .padding(bottom = 1.rdp)
                 ) {
                     Text(
                         stringResource(R.string.query_filter_search)
@@ -65,15 +70,13 @@ fun SearchFilterScaffold(
                 }
 
                 filter?.let { filter ->
-                    if (sheetState.isVisible) {
+                    if (sheetVisible) {
                         ModalBottomSheet(
                             onDismissRequest = {
                                 commitFilter()
-                                coroutineScope.launch {
-                                    sheetState.hide()
-                                }
+                                sheetVisible = false
                             },
-                            sheetState = sheetState
+                            modifier = Modifier.fillMaxSize()
                         ) {
                             Column(
                                 Modifier.padding(1.rdp),
@@ -89,7 +92,7 @@ fun SearchFilterScaffold(
                                 OrgzlyButton(
                                     onClick = {
                                         commitFilter()
-                                        coroutineScope.launch { sheetState.hide() }
+                                        sheetVisible = false
                                     },
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
