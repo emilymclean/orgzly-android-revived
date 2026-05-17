@@ -8,8 +8,13 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.orgzly.BuildConfig
@@ -19,6 +24,7 @@ import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.sync.SyncRunner
 import com.orgzly.android.ui.OnViewHolderClickListener
 import com.orgzly.android.ui.SelectableItemAdapter
+import com.orgzly.android.ui.compose.base.createFragmentComposeView
 import com.orgzly.android.ui.main.setupSearchView
 import com.orgzly.android.ui.notes.ItemGestureDetector
 import com.orgzly.android.ui.notes.NoteItemViewHolder
@@ -28,6 +34,7 @@ import com.orgzly.android.ui.notes.query.QueryViewModel
 import com.orgzly.android.ui.notes.query.QueryViewModel.Companion.APP_BAR_DEFAULT_MODE
 import com.orgzly.android.ui.notes.query.QueryViewModel.Companion.APP_BAR_SELECTION_MODE
 import com.orgzly.android.ui.notes.query.QueryViewModelFactory
+import com.orgzly.android.ui.notes.query.SearchFilterScaffold
 import com.orgzly.android.ui.settings.SettingsActivity
 import com.orgzly.android.ui.stickyheaders.StickyHeadersLinearLayoutManager
 import com.orgzly.android.ui.util.ActivityUtils
@@ -69,7 +76,22 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
 
         binding = FragmentQueryAgendaBinding.inflate(inflater, container, false)
 
-        return binding.root
+        return createFragmentComposeView {
+            val state by viewModel.state.collectAsStateWithLifecycle()
+
+            SearchFilterScaffold(
+                state.filter,
+                viewModel::updateFilter,
+                viewModel::commitFilter,
+                state.allTags,
+                state.allBooks,
+            ) {
+                AndroidView(
+                    factory = { binding.root },
+                    Modifier.fillMaxSize()
+                )
+            }
+        }
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -153,8 +175,6 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
                 }
                 true
             }
-
-            requireActivity().setupSearchView(menu)
 
             setOnClickListener {
                 binding.topToolbar.menu.findItem(R.id.search_view)?.expandActionView()
