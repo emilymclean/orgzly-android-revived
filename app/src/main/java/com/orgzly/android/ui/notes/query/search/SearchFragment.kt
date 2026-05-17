@@ -57,7 +57,9 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
     override val viewModel: QueryViewModel by viewModels {
         QueryViewModelFactory.provideFactory(
             viewModelFactory,
-            QueryViewModelOwner.SEARCH
+            requireArguments().getString(ARG_QUERY) ?: "",
+            QueryViewModelOwner.SEARCH,
+            requireContext()
         )
     }
 
@@ -149,6 +151,7 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
                     currentQueryName,
                     false
                 )
+                else -> {}
             }
         }
 
@@ -284,8 +287,6 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
 
             viewModel.appBar.toModeFromSelectionCount(viewAdapter.getSelection().count)
         })
-
-        viewModel.refresh(currentQuery, AppPreferences.defaultPriority(context))
 
         viewModel.appBar.mode.observeSingle(viewLifecycleOwner) { mode ->
             when (mode) {

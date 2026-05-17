@@ -60,7 +60,9 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
     override val viewModel: QueryViewModel  by viewModels {
         QueryViewModelFactory.provideFactory(
             viewModelFactory,
-            QueryViewModelOwner.AGENDA
+            requireArguments().getString(ARG_QUERY) ?: "",
+            QueryViewModelOwner.AGENDA,
+            requireContext()
         )
     }
 
@@ -155,6 +157,7 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
                     currentQueryName,
                     false
                 )
+                else -> {}
             }
         }
     }
@@ -319,8 +322,6 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
                 }
             }
         }
-
-        viewModel.refresh(currentQuery, AppPreferences.defaultPriority(context))
     }
 
     override fun onClick(view: View, position: Int, item: AgendaItem) {

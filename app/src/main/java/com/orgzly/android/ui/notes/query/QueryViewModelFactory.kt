@@ -1,5 +1,6 @@
 package com.orgzly.android.ui.notes.query
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import dagger.assisted.AssistedFactory
@@ -8,17 +9,21 @@ import dagger.assisted.AssistedFactory
 interface QueryViewModelFactory : ViewModelProvider.Factory {
 
     fun create(
-        owner: QueryViewModelOwner
+        initialQuery: String,
+        owner: QueryViewModelOwner,
+        context: Context
     ): QueryViewModel
 
     companion object {
         fun provideFactory(
             assistedFactory: QueryViewModelFactory,
+            initialQuery: String,
             owner: QueryViewModelOwner,
+            context: Context
         ): ViewModelProvider.Factory = object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
                 @Suppress("UNCHECKED_CAST")
-                return assistedFactory.create(owner) as T
+                return assistedFactory.create(initialQuery, owner, context) as T
             }
         }
     }

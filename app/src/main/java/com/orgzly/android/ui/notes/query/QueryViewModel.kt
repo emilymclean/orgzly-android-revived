@@ -1,5 +1,6 @@
 package com.orgzly.android.ui.notes.query
 
+import android.content.Context
 import androidx.compose.runtime.Immutable
 import androidx.lifecycle.asFlow
 import androidx.lifecycle.asLiveData
@@ -7,10 +8,12 @@ import androidx.lifecycle.viewModelScope
 import com.orgzly.BuildConfig
 import com.orgzly.android.data.DataRepository
 import com.orgzly.android.db.entity.NoteView
+import com.orgzly.android.prefs.AppPreferences
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.query.user.InternalQueryBuilder
 import com.orgzly.android.query.user.InternalQueryParser
 import com.orgzly.android.query.user.SimpleFilterMapper
+import com.orgzly.android.query.user.UnsupportedSimpleFilterException
 import com.orgzly.android.ui.AppBar
 import com.orgzly.android.ui.CommonViewModel
 import com.orgzly.android.ui.compose.base.EventFlow
@@ -38,7 +41,8 @@ data class QueryState(
     val allBooks: List<String>,
     val allTags: List<String>,
     val loading: QueryViewModel.ViewState,
-    val showRefineButton: Boolean
+    val showRefineButton: Boolean,
+    val isSimpleMode: Boolean,
 ) {
 
     companion object {
@@ -49,14 +53,21 @@ data class QueryState(
             emptyList(),
             emptyList(),
             QueryViewModel.ViewState.LOADING,
-            true
+            showRefineButton = false,
+            isSimpleMode = true,
         )
     }
 
 }
 
+enum class QuerySnackbar {
+    SWITCH_TO_SIMPLE_FAILED
+}
+
 sealed interface QueryEvent {
     data class ChangeQueryView(val query: String): QueryEvent
+
+    data class Snackbar(val snackbar: QuerySnackbar): QueryEvent
 }
 
 class QueryViewModel @AssistedInject constructor(
@@ -64,7 +75,9 @@ class QueryViewModel @AssistedInject constructor(
     private val queryParser: InternalQueryParser,
     private val queryBuilder: InternalQueryBuilder,
     private val filterMapper: SimpleFilterMapper,
-    @Assisted private val owner: QueryViewModelOwner
+    @Assisted private val initialQuery: String,
+    @Assisted private val owner: QueryViewModelOwner,
+    @Assisted context: Context
 ) : CommonViewModel() {
 
     enum class ViewState {
@@ -75,8 +88,11 @@ class QueryViewModel @AssistedInject constructor(
 
     private val paramUpdateMutex = Mutex()
 
-    private val query = MutableStateFlow<String?>(null)
-    private val filter = MutableStateFlow<SimpleFilter?>(null)
+    private var shouldStayInAdvancedMode = AppPreferences.isDefaultToAdvancedQueryEnabled(context)
+    private val isSimpleMode = MutableStateFlow(!shouldStayInAdvancedMode)
+    private val query = MutableStateFlow("")
+    private val search = MutableStateFlow("")
+    private val filter = MutableStateFlow(SimpleFilter())
 
     private val allTags = dataRepository.selectAllTagsLiveData().asFlow()
     private val allBooks = dataRepository.getBooksLiveData().asFlow().mapLatest {
@@ -92,17 +108,19 @@ class QueryViewModel @AssistedInject constructor(
 
     val state = combine(
         query,
+        search,
         queryResult,
         allTags,
         allBooks,
         filter,
-        appBar.currentMode
-    ) { query, queryResult, allTags, allBooks, filter, currentMode ->
-        val parsedQuery = runCatching {
-            filterMapper.fromQuery(queryParser.parse(query ?: ""))
-        }
+        appBar.currentMode,
+        isSimpleMode
+    ) { query, search, queryResult, allTags, allBooks, filter, appBarMode, isSimpleMode ->
         QueryState(
-            parsedQuery.getOrNull()?.search ?: query ?: "",
+            when (isSimpleMode) {
+                true -> search
+                else -> query
+            },
             filter,
             queryResult,
             allBooks,
@@ -111,8 +129,9 @@ class QueryViewModel @AssistedInject constructor(
                 true -> ViewState.EMPTY
                 else -> ViewState.LOADED
             },
-            parsedQuery.isSuccess &&
-                    currentMode == APP_BAR_DEFAULT_MODE
+            isSimpleMode &&
+                    appBarMode == APP_BAR_DEFAULT_MODE,
+            isSimpleMode
         )
     }.state(QueryState.default)
 
@@ -129,16 +148,83 @@ class QueryViewModel @AssistedInject constructor(
         it.notes
     }.asLiveData()
 
+    init {
+        val parsed = runCatching { filterMapper.fromQuery(
+            queryParser.parse(initialQuery)
+        ) }.getOrNull()
+
+        query.value = initialQuery
+        isSimpleMode.value = if (parsed != null && !shouldStayInAdvancedMode) {
+            search.value = parsed.search
+            filter.value = parsed.filter
+            true
+        } else {
+            false
+        }
+    }
+
     /* Triggers querying only if parameters changed. */
-    fun refresh(query: String?, defaultPriority: String) {
+    fun onSearch(field: String) {
         viewModelScope.launch {
             paramUpdateMutex.withLock {
-                if (BuildConfig.LOG_DEBUG) LogUtils.d(TAG, query)
-                this@QueryViewModel.query.value = query
+                if (BuildConfig.LOG_DEBUG) LogUtils.d(TAG, field)
+                when (state.value.isSimpleMode) {
+                    true -> {
+                        search.value = field
+                        query.value = queryBuilder.build(
+                            filterMapper.toQuery(
+                                field,
+                                filter.value
+                            )
+                        )
+                    }
+                    else -> {
+                        query.value = field
 
-                filter.value = query?.runCatching {
-                    filterMapper.fromQuery(queryParser.parse(this)).filter
-                }?.getOrNull()
+                        val asSimple = field.runCatching {
+                            filterMapper.fromQuery(queryParser.parse(this))
+                        }.getOrNull()
+
+                        filter.value = asSimple?.filter ?: SimpleFilter()
+                        search.value = asSimple?.search ?: ""
+
+                        if (asSimple != null && !shouldStayInAdvancedMode) {
+                            isSimpleMode.value = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    fun swapQueryMode() {
+        viewModelScope.launch {
+            paramUpdateMutex.withLock {
+                when (isSimpleMode.value) {
+                    true -> {
+                        shouldStayInAdvancedMode = true
+                        query.value = queryBuilder.build(
+                            filterMapper.toQuery(
+                                search.value,
+                                filter.value
+                            )
+                        )
+                        isSimpleMode.value = false
+                    }
+                    else -> {
+                        shouldStayInAdvancedMode = false
+                        try {
+                            val simple = filterMapper.fromQuery(queryParser.parse(query.value))
+
+                            search.value = simple.search
+                            filter.value = simple.filter
+
+                            isSimpleMode.value = true
+                        } catch (e: UnsupportedSimpleFilterException) {
+                            _events.send(QueryEvent.Snackbar(QuerySnackbar.SWITCH_TO_SIMPLE_FAILED))
+                        }
+                    }
+                }
             }
         }
     }
@@ -155,17 +241,17 @@ class QueryViewModel @AssistedInject constructor(
         viewModelScope.launch {
             paramUpdateMutex.withLock {
                 val search = filterMapper.fromQuery(queryParser.parse(
-                    query.value ?: return@launch
+                    query.value
                 )).search
 
                 val update = queryBuilder.build(
                     filterMapper.toQuery(
                         search,
-                        filter.value ?: SimpleFilter()
+                        filter.value
                     )
                 )
 
-                val hasAgenda = filter.value?.agendaDays != null
+                val hasAgenda = filter.value.agendaDays != null
                 when (owner) {
                     QueryViewModelOwner.SEARCH if hasAgenda -> {
                         _events.send(QueryEvent.ChangeQueryView(update))
