@@ -12,9 +12,11 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.Observer
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.orgzly.BuildConfig
@@ -35,6 +37,7 @@ import com.orgzly.android.ui.notes.query.QueryFragment
 import com.orgzly.android.ui.notes.query.QueryViewModel
 import com.orgzly.android.ui.notes.query.QueryViewModel.Companion.APP_BAR_DEFAULT_MODE
 import com.orgzly.android.ui.notes.query.QueryViewModel.Companion.APP_BAR_SELECTION_MODE
+import com.orgzly.android.ui.notes.query.SearchFilterScaffold
 import com.orgzly.android.ui.settings.SettingsActivity
 import com.orgzly.android.ui.util.ActivityUtils
 import com.orgzly.android.ui.util.setDecorFitsSystemWindowsForBottomToolbar
@@ -75,27 +78,19 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
         binding = FragmentQuerySearchBinding.inflate(inflater, container, false)
 
         return createFragmentComposeView {
-            Scaffold(
+            val state by viewModel.state.collectAsStateWithLifecycle()
 
-            ) { contentPadding ->
+            SearchFilterScaffold(
+                state.filter,
+                viewModel::updateFilter,
+                viewModel::commitFilter,
+                state.allTags,
+                state.allBooks,
+            ) {
                 AndroidView(
                     factory = { binding.root },
                     Modifier.fillMaxSize()
                 )
-                Column(
-                    Modifier.scaffoldPadding(contentPadding)
-                ) { }
-
-//                ModalBottomSheet(
-//                    onDismissRequest = {},
-//                ) {
-//                    SearchFilterWidget(
-//                        remember { SimpleFilter() },
-//                        {},
-//                        emptyList(),
-//                        emptyList()
-//                    )
-//                }
             }
         }
     }

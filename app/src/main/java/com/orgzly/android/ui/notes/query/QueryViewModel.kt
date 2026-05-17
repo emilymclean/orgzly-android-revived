@@ -23,6 +23,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
@@ -37,6 +38,8 @@ data class QueryState(
     val query: String?,
     val filter: SimpleFilter?,
     val notes: List<NoteView>,
+    val allBooks: List<String>,
+    val allTags: List<String>,
     val loading: QueryViewModel.ViewState
 ) {
 
@@ -44,6 +47,8 @@ data class QueryState(
         val default = QueryState(
             null,
             null,
+            emptyList(),
+            emptyList(),
             emptyList(),
             QueryViewModel.ViewState.LOADING
         )
@@ -58,11 +63,6 @@ class QueryViewModel @AssistedInject constructor(
     private val filterMapper: SimpleFilterMapper
 ) : CommonViewModel() {
 
-    data class Params(
-        val query: String?,
-        val defaultPriority: String
-    )
-
     enum class ViewState {
         LOADING,
         LOADED,
@@ -71,34 +71,36 @@ class QueryViewModel @AssistedInject constructor(
 
     private val paramUpdateMutex = Mutex()
 
-    private val notesParams = MutableStateFlow<Params?>(null)
+    private val query = MutableStateFlow<String?>(null)
 
     private val filter = MutableStateFlow<SimpleFilter?>(null)
 
-    val state = flatCombineLatest(
-        notesParams,
-        filter
-    ) { notesParams, filter ->
-        notesParams?.query ?: return@flatCombineLatest flowOf(
-            QueryState(
-                "",
-                filter,
-                emptyList(),
-                ViewState.LOADING
-            )
-        )
+    private val allTags = dataRepository.selectAllTagsLiveData().asFlow()
+    private val allBooks = dataRepository.getBooksLiveData().asFlow().mapLatest {
+        it.map { it.book.name }
+    }
+    private val queryResult = query.filterNotNull().flatMapLatest { query ->
+        dataRepository.selectNotesFromQueryFlow(query)
+    }
 
-        dataRepository.selectNotesFromQueryFlow(notesParams.query).mapLatest { data ->
-            QueryState(
-                notesParams.query,
-                filter,
-                data,
-                when (data.isEmpty()) {
-                    true -> ViewState.EMPTY
-                    else -> ViewState.LOADED
-                },
-            )
-        }
+    val state = combine(
+        query,
+        queryResult,
+        allTags,
+        allBooks,
+        filter
+    ) { query, queryResult, allTags, allBooks, filter ->
+        QueryState(
+            query,
+            filter,
+            queryResult,
+            allBooks,
+            allTags,
+            when (queryResult.isEmpty()) {
+                true -> ViewState.EMPTY
+                else -> ViewState.LOADED
+            },
+        )
     }.state(QueryState.default)
 
     @Deprecated("Use state")
@@ -117,13 +119,12 @@ class QueryViewModel @AssistedInject constructor(
 
     /* Triggers querying only if parameters changed. */
     fun refresh(query: String?, defaultPriority: String) {
-        val params = Params(query, defaultPriority)
         viewModelScope.launch {
             paramUpdateMutex.withLock {
-                if (BuildConfig.LOG_DEBUG) LogUtils.d(TAG, params)
-                notesParams.value = params
+                if (BuildConfig.LOG_DEBUG) LogUtils.d(TAG, query)
+                this@QueryViewModel.query.value = query
 
-                filter.value = params.query?.runCatching {
+                filter.value = query?.runCatching {
                     filterMapper.fromQuery(queryParser.parse(this)).filter
                 }?.getOrNull()
             }
@@ -141,21 +142,15 @@ class QueryViewModel @AssistedInject constructor(
     fun commitFilter() {
         viewModelScope.launch {
             paramUpdateMutex.withLock {
-                val params = notesParams.value ?: return@launch
+                val search = filterMapper.fromQuery(queryParser.parse(
+                    query.value ?: return@launch
+                )).search
 
-                val search = params.query?.let {
-                    filterMapper.fromQuery(queryParser.parse(it))
-                }?.search ?: ""
-
-                val query = queryBuilder.build(
+                query.value = queryBuilder.build(
                     filterMapper.toQuery(
                         search,
                         filter.value ?: SimpleFilter()
                     )
-                )
-
-                notesParams.value = params.copy(
-                    query = query,
                 )
             }
         }
