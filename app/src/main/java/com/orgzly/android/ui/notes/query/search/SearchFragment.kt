@@ -94,7 +94,7 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
                 viewModel::commitFilter,
                 state.allTags,
                 state.allBooks,
-                state.isSimpleMode
+                state.showRefineButton
             ) {
                 AndroidView(
                     factory = { binding.root },

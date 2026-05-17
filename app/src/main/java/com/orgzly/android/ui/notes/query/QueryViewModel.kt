@@ -14,11 +14,11 @@ import com.orgzly.android.query.user.SimpleFilterMapper
 import com.orgzly.android.ui.AppBar
 import com.orgzly.android.ui.CommonViewModel
 import com.orgzly.android.ui.compose.base.EventFlow
+import com.orgzly.android.ui.util.combine
 import com.orgzly.android.util.LogUtils
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.mapLatest
@@ -38,7 +38,7 @@ data class QueryState(
     val allBooks: List<String>,
     val allTags: List<String>,
     val loading: QueryViewModel.ViewState,
-    val isSimpleMode: Boolean
+    val showRefineButton: Boolean
 ) {
 
     companion object {
@@ -86,13 +86,18 @@ class QueryViewModel @AssistedInject constructor(
         dataRepository.selectNotesFromQueryFlow(query)
     }
 
+    val appBar: AppBar = AppBar(mapOf(
+        APP_BAR_DEFAULT_MODE to null,
+        APP_BAR_SELECTION_MODE to APP_BAR_DEFAULT_MODE))
+
     val state = combine(
         query,
         queryResult,
         allTags,
         allBooks,
-        filter
-    ) { query, queryResult, allTags, allBooks, filter ->
+        filter,
+        appBar.currentMode
+    ) { query, queryResult, allTags, allBooks, filter, currentMode ->
         val parsedQuery = runCatching {
             filterMapper.fromQuery(queryParser.parse(query ?: ""))
         }
@@ -106,7 +111,8 @@ class QueryViewModel @AssistedInject constructor(
                 true -> ViewState.EMPTY
                 else -> ViewState.LOADED
             },
-            parsedQuery.isSuccess
+            parsedQuery.isSuccess &&
+                    currentMode == APP_BAR_DEFAULT_MODE
         )
     }.state(QueryState.default)
 
@@ -122,10 +128,6 @@ class QueryViewModel @AssistedInject constructor(
     val data = state.mapLatest {
         it.notes
     }.asLiveData()
-
-    val appBar: AppBar = AppBar(mapOf(
-        APP_BAR_DEFAULT_MODE to null,
-        APP_BAR_SELECTION_MODE to APP_BAR_DEFAULT_MODE))
 
     /* Triggers querying only if parameters changed. */
     fun refresh(query: String?, defaultPriority: String) {

@@ -14,7 +14,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -27,7 +26,6 @@ import com.orgzly.android.ui.DisplayManager
 import com.orgzly.android.ui.OnViewHolderClickListener
 import com.orgzly.android.ui.SelectableItemAdapter
 import com.orgzly.android.ui.compose.base.createFragmentComposeView
-import com.orgzly.android.ui.main.setupSearchView
 import com.orgzly.android.ui.notes.ItemGestureDetector
 import com.orgzly.android.ui.notes.NoteItemViewHolder
 import com.orgzly.android.ui.notes.NotePopup
@@ -97,7 +95,7 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
                 viewModel::commitFilter,
                 state.allTags,
                 state.allBooks,
-                state.isSimpleMode
+                state.showRefineButton
             ) {
                 AndroidView(
                     factory = { binding.root },
