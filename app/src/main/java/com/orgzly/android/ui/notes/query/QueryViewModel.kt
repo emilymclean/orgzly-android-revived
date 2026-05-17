@@ -32,22 +32,24 @@ enum class QueryViewModelOwner {
 
 @Immutable
 data class QueryState(
-    val query: String?,
+    val query: String,
     val filter: SimpleFilter?,
     val notes: List<NoteView>,
     val allBooks: List<String>,
     val allTags: List<String>,
-    val loading: QueryViewModel.ViewState
+    val loading: QueryViewModel.ViewState,
+    val isSimpleMode: Boolean
 ) {
 
     companion object {
         val default = QueryState(
+            "",
             null,
-            null,
             emptyList(),
             emptyList(),
             emptyList(),
-            QueryViewModel.ViewState.LOADING
+            QueryViewModel.ViewState.LOADING,
+            true
         )
     }
 
@@ -74,7 +76,6 @@ class QueryViewModel @AssistedInject constructor(
     private val paramUpdateMutex = Mutex()
 
     private val query = MutableStateFlow<String?>(null)
-
     private val filter = MutableStateFlow<SimpleFilter?>(null)
 
     private val allTags = dataRepository.selectAllTagsLiveData().asFlow()
@@ -92,8 +93,11 @@ class QueryViewModel @AssistedInject constructor(
         allBooks,
         filter
     ) { query, queryResult, allTags, allBooks, filter ->
+        val parsedQuery = runCatching {
+            filterMapper.fromQuery(queryParser.parse(query ?: ""))
+        }
         QueryState(
-            query,
+            parsedQuery.getOrNull()?.search ?: query ?: "",
             filter,
             queryResult,
             allBooks,
@@ -102,6 +106,7 @@ class QueryViewModel @AssistedInject constructor(
                 true -> ViewState.EMPTY
                 else -> ViewState.LOADED
             },
+            parsedQuery.isSuccess
         )
     }.state(QueryState.default)
 

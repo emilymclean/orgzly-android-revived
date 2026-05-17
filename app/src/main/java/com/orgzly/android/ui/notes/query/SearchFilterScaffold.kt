@@ -41,6 +41,7 @@ fun SearchFilterScaffold(
     commitFilter: () -> Unit,
     allTags: List<String>,
     allBooks: List<String>,
+    isSimpleMode: Boolean,
     content: @Composable () -> Unit
 ) {
     var sheetVisible by remember { mutableStateOf(false) }
@@ -56,18 +57,20 @@ fun SearchFilterScaffold(
                     .fillMaxSize()
                     .scaffoldPadding(contentPadding)
             ) {
-                OrgzlyButton(
-                    onClick = {
-                        sheetVisible = true
-                    },
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .padding(horizontal = 1.rdp)
-                        .padding(bottom = 1.rdp)
-                ) {
-                    Text(
-                        stringResource(R.string.query_filter_search)
-                    )
+                if (isSimpleMode) {
+                    OrgzlyButton(
+                        onClick = {
+                            sheetVisible = true
+                        },
+                        Modifier
+                            .align(Alignment.BottomCenter)
+                            .padding(horizontal = 1.rdp)
+                            .padding(bottom = 1.rdp)
+                    ) {
+                        Text(
+                            stringResource(R.string.query_filter_search)
+                        )
+                    }
                 }
 
                 filter?.let { filter ->
@@ -123,7 +126,8 @@ fun SearchFilterScaffoldPreview() {
             {},
             {},
             emptyList(),
-            emptyList()
+            emptyList(),
+            true
         ) { }
     }
 }

@@ -97,6 +97,7 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
                 viewModel::commitFilter,
                 state.allTags,
                 state.allBooks,
+                state.isSimpleMode
             ) {
                 AndroidView(
                     factory = { binding.root },
