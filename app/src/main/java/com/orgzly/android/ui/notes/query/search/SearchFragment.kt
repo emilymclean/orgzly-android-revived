@@ -91,12 +91,10 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
             val state by viewModel.state.collectAsStateWithLifecycle()
 
             SearchFilterScaffold(
-                state.filter,
+                state,
+                viewModel.events,
                 viewModel::updateFilter,
                 viewModel::commitFilter,
-                state.allTags,
-                state.allBooks,
-                state.showRefineButton
             ) {
                 AndroidView(
                     factory = { binding.root },
@@ -139,8 +137,13 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
             }))
         }
 
-        viewModel.state.collectWithLifecycle {
-            binding.topToolbar.subtitle = it.query
+        viewModel.state.collectWithLifecycle { state ->
+            binding.topToolbar.subtitle = state.query
+
+            setupSwapButton(
+                binding.topToolbar.menu,
+                state
+            )
         }
 
         viewModel.events.collectWithLifecycle { event ->
@@ -175,6 +178,11 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
         binding.topToolbar.run {
             menu.clear()
             inflateMenu(R.menu.query_actions)
+
+            setupSwapButton(
+                menu,
+                viewModel.state.value
+            )
 
             ActivityUtils.keepScreenOnUpdateMenuItem(activity, menu)
 

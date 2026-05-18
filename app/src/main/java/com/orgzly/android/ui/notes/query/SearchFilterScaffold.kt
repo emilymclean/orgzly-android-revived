@@ -20,6 +20,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -36,30 +38,49 @@ import com.orgzly.R
 import com.orgzly.android.query.SimpleFilter
 import com.orgzly.android.ui.compose.base.PreviewOrgzlyBootstrap
 import com.orgzly.android.ui.compose.modifiers.scaffoldPadding
+import com.orgzly.android.ui.compose.providers.LaunchedEventEffect
 import com.orgzly.android.ui.compose.widgets.OrgzlyButton
+import com.orgzly.android.ui.savedsearch.SavedSearchEvent
+import com.orgzly.android.ui.savedsearch.SavedSearchSnackbar
 import com.orgzly.android.ui.savedsearch.SearchFilterWidget
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SearchFilterScaffold(
-    filter: SimpleFilter?,
+    state: QueryState,
+    events: Flow<QueryEvent>,
     onFilterChange: (SimpleFilter) -> Unit,
     commitFilter: () -> Unit,
-    allTags: List<String>,
-    allBooks: List<String>,
-    showRefineButton: Boolean,
     content: @Composable () -> Unit
 ) {
     var sheetVisible by remember { mutableStateOf(false) }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+    val switchToSimpleFailedMessage = stringResource(R.string.search_filter_unable_to_switch_to_simple)
+    LaunchedEventEffect(events) {
+        when (it) {
+            is QueryEvent.Snackbar -> when (it.snackbar) {
+                QuerySnackbar.SWITCH_TO_SIMPLE_FAILED -> snackbarHostState.showSnackbar(
+                    switchToSimpleFailedMessage
+                )
+            }
+            is QueryEvent.ChangeQueryView -> {}
+        }
+    }
+
     Scaffold(
-        Modifier.fillMaxSize()
+        Modifier.fillMaxSize(),
+        snackbarHost = {
+            SnackbarHost(snackbarHostState)
+        }
     ) { contentPadding ->
         Box(Modifier.fillMaxSize()) {
             content()
 
             AnimatedVisibility(
-                showRefineButton,
+                state.showRefineButton,
                 Modifier.align(Alignment.BottomCenter),
                 enter = slideInVertically(
                     initialOffsetY = { it }
@@ -88,7 +109,7 @@ fun SearchFilterScaffold(
                     .fillMaxSize()
                     .scaffoldPadding(contentPadding)
             ) {
-                filter?.let { filter ->
+                state.filter?.let { filter ->
                     if (sheetVisible) {
                         ModalBottomSheet(
                             onDismissRequest = {
@@ -106,8 +127,8 @@ fun SearchFilterScaffold(
                                 SearchFilterWidget(
                                     filter,
                                     onFilterChange,
-                                    allTags,
-                                    allBooks
+                                    state.allTags,
+                                    state.allBooks
                                 )
 
                                 OrgzlyButton(
@@ -135,14 +156,10 @@ fun SearchFilterScaffold(
 fun SearchFilterScaffoldPreview() {
     PreviewOrgzlyBootstrap {
         SearchFilterScaffold(
-            SimpleFilter(
-                excludeDone = true,
-            ),
+            QueryState.default,
+            flowOf(),
             {},
-            {},
-            emptyList(),
-            emptyList(),
-            true
+            {}
         ) { }
     }
 }

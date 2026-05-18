@@ -92,12 +92,10 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
             val state by viewModel.state.collectAsStateWithLifecycle()
 
             SearchFilterScaffold(
-                state.filter,
+                state,
+                viewModel.events,
                 viewModel::updateFilter,
-                viewModel::commitFilter,
-                state.allTags,
-                state.allBooks,
-                state.showRefineButton
+                viewModel::commitFilter
             ) {
                 AndroidView(
                     factory = { binding.root },
@@ -145,8 +143,12 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
 
         binding.swipeContainer.setup()
 
-        viewModel.state.collectWithLifecycle {
-            binding.topToolbar.subtitle = it.query
+        viewModel.state.collectWithLifecycle { state ->
+            binding.topToolbar.subtitle = state.query
+            setupSwapButton(
+                binding.topToolbar.menu,
+                state
+            )
         }
 
         viewModel.events.collectWithLifecycle { event ->
@@ -179,6 +181,11 @@ class AgendaFragment : QueryFragment(), OnViewHolderClickListener<AgendaItem> {
         binding.topToolbar.run {
             menu.clear()
             inflateMenu(R.menu.query_actions)
+
+            setupSwapButton(
+                menu,
+                viewModel.state.value
+            )
 
             ActivityUtils.keepScreenOnUpdateMenuItem(activity, menu)
 

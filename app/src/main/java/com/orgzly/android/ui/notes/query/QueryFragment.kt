@@ -160,6 +160,23 @@ abstract class QueryFragment :
         }
     }
 
+    protected fun setupSwapButton(
+        menu: Menu,
+        state: QueryState
+    ) {
+        val item = menu.findItem(R.id.swap_search_mode) ?: return
+        item.setTitle(
+            when (state.isSimpleMode) {
+                true -> R.string.search_filter_swap_to_advanced
+                else -> R.string.search_filter_swap_to_simple
+            }
+        )
+        item.setOnMenuItemClickListener {
+            viewModel.swapQueryMode()
+            true
+        }
+    }
+
     protected fun setupSearch(menu: Menu) {
         val searchItem = menu.findItem(R.id.search_view)
 
