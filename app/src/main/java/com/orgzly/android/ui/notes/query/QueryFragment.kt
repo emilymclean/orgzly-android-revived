@@ -4,11 +4,18 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
+import android.view.Menu
+import android.view.ViewGroup
+import androidx.appcompat.widget.SearchView
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.ViewModelProvider
 import com.orgzly.R
 import com.orgzly.android.NotesOrgExporter
+import com.orgzly.android.query.Condition
+import com.orgzly.android.query.Query
+import com.orgzly.android.query.user.DottedQueryBuilder
 import com.orgzly.android.sync.SyncRunner
+import com.orgzly.android.ui.DisplayManager
 import com.orgzly.android.ui.dialogs.TimestampDialogFragment
 import com.orgzly.android.ui.drawer.DrawerItem
 import com.orgzly.android.ui.main.SharedMainActivityViewModel
@@ -151,6 +158,32 @@ abstract class QueryFragment :
         } catch (e: Exception) {
             Log.e(TAG, "Failed to share notes", e)
         }
+    }
+
+    protected fun setupSearch(menu: Menu) {
+        val searchItem = menu.findItem(R.id.search_view)
+
+        val searchView = searchItem.actionView as SearchView
+
+        searchView.queryHint = getString(R.string.search_hint)
+
+        searchView.setOnSearchClickListener {
+            searchView.layoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT
+            searchView.setQuery("${viewModel.state.value.query} ", false)
+        }
+
+        searchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
+            override fun onQueryTextChange(str: String?): Boolean {
+                return false
+            }
+
+            override fun onQueryTextSubmit(str: String): Boolean {
+                // Close search
+                searchItem.collapseActionView()
+                viewModel.onSearch(str)
+                return true
+            }
+        })
     }
 
     companion object {

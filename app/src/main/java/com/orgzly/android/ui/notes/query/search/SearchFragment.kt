@@ -205,6 +205,8 @@ class SearchFragment : QueryFragment(), OnViewHolderClickListener<NoteView> {
                 binding.topToolbar.menu.findItem(R.id.search_view)?.expandActionView()
             }
 
+            setupSearch(menu)
+
             title = currentQueryName ?: getString(R.string.search)
         }
     }

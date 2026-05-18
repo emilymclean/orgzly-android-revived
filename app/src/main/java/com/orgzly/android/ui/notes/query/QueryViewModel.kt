@@ -240,13 +240,9 @@ class QueryViewModel @AssistedInject constructor(
     fun commitFilter() {
         viewModelScope.launch {
             paramUpdateMutex.withLock {
-                val search = filterMapper.fromQuery(queryParser.parse(
-                    query.value
-                )).search
-
                 val update = queryBuilder.build(
                     filterMapper.toQuery(
-                        search,
+                        search.value,
                         filter.value
                     )
                 )
