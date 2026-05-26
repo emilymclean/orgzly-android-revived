@@ -1,8 +1,6 @@
 package com.orgzly.android.di.module
 
-import com.orgzly.android.UsesApplicationCoroutineScope
-import com.orgzly.android.UsesExecutorDispatcher
-import com.orgzly.android.applicationScope
+import com.orgzly.android.App
 import dagger.Module
 import dagger.Provides
 import kotlinx.coroutines.CoroutineDispatcher
@@ -31,6 +29,14 @@ annotation class UnconfinedDispatcher
 @UsesApplicationCoroutineScope
 annotation class ApplicationCoroutineScope
 
+@RequiresOptIn(
+    message = "Use of long lived scope. A shorter lived scope such as viewModelScope or " +
+            "lifecycleScope, or a WorkManager task is almost always more appropriate.",
+    level = RequiresOptIn.Level.ERROR,
+)
+@Retention(AnnotationRetention.BINARY)
+annotation class UsesApplicationCoroutineScope
+
 @Module
 class DispatcherModule {
 
@@ -56,6 +62,6 @@ class DispatcherModule {
     @OptIn(UsesApplicationCoroutineScope::class)
     @Provides
     @ApplicationCoroutineScope
-    fun provideApplicationCoroutineScope(): CoroutineScope = applicationScope
+    fun provideApplicationCoroutineScope(app: App): CoroutineScope = app.applicationScope
 
 }

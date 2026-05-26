@@ -12,9 +12,15 @@ import com.orgzly.android.di.AppComponent;
 import com.orgzly.android.di.DaggerAppComponent;
 import com.orgzly.android.di.module.ApplicationModule;
 import com.orgzly.android.di.module.DatabaseModule;
+import com.orgzly.android.di.module.UsesApplicationCoroutineScope;
 import com.orgzly.android.ui.CommonActivity;
 import com.orgzly.android.ui.CommonActivityLifecycleCallbacks;
 import com.orgzly.android.ui.settings.SettingsFragment;
+
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.CoroutineScopeKt;
+import kotlinx.coroutines.Dispatchers;
+import kotlinx.coroutines.SupervisorKt;
 
 public class App extends Application {
     private static Context context;
@@ -25,6 +31,11 @@ public class App extends Application {
     public static AppExecutors EXECUTORS = new AppExecutors();
 
     public static AppComponent appComponent;
+
+    @UsesApplicationCoroutineScope
+    public CoroutineScope applicationScope = CoroutineScopeKt.CoroutineScope(
+        Dispatchers.getDefault().plus(SupervisorKt.SupervisorJob(null))
+    );
 
     @Override
     protected void attachBaseContext(Context base) {
@@ -82,6 +93,6 @@ public class App extends Application {
     @Override
     public void onTerminate() {
         super.onTerminate();
-        ApplicationScopeJava.cancel();
+        CoroutineScopeKt.cancel(applicationScope, null);
     }
 }
