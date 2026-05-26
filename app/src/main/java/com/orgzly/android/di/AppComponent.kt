@@ -44,6 +44,7 @@ import com.orgzly.android.widgets.ListWidgetProvider
 import com.orgzly.android.widgets.ListWidgetSelectionActivity
 import com.orgzly.android.widgets.ListWidgetService
 import com.orgzly.android.calendar.CalendarWorker
+import com.orgzly.android.di.module.DispatcherModule
 import dagger.Component
 import javax.inject.Singleton
 
@@ -52,7 +53,8 @@ import javax.inject.Singleton
 @Component(modules = [
     ApplicationModule::class,
     DatabaseModule::class,
-    DataModule::class
+    DataModule::class,
+    DispatcherModule::class
 ])
 interface AppComponent {
     fun inject(arg: MainActivity)
