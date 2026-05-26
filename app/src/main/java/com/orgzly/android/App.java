@@ -4,6 +4,7 @@ package com.orgzly.android;
 import android.app.Application;
 import android.content.Context;
 
+import androidx.annotation.OptIn;
 import androidx.multidex.MultiDex;
 import androidx.preference.PreferenceManager;
 
@@ -16,6 +17,9 @@ import com.orgzly.android.ui.CommonActivityLifecycleCallbacks;
 import com.orgzly.android.ui.settings.SettingsFragment;
 
 import org.jetbrains.annotations.Nullable;
+
+import kotlinx.coroutines.CoroutineScope;
+import kotlinx.coroutines.Dispatchers;
 
 public class App extends Application {
     private static Context context;
@@ -79,4 +83,10 @@ public class App extends Application {
 
     public static CommonActivity getCurrentActivity() { return currentActivity; }
 
+    @OptIn(markerClass = UsesApplicationCoroutineScope.class)
+    @Override
+    public void onTerminate() {
+        super.onTerminate();
+        ApplicationScopeJava.cancel();
+    }
 }
