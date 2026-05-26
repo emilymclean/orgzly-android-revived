@@ -3,6 +3,11 @@ package com.orgzly.android
 import android.os.AsyncTask
 import android.os.Handler
 import android.os.Looper
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.asCoroutineDispatcher
 
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
@@ -26,6 +31,13 @@ open class AppExecutors(
             MainThreadExecutor()
     )
 
+    @UsesExecutorDispatcher
+    val diskDispatcher: CoroutineDispatcher = diskIO().asCoroutineDispatcher()
+    @UsesExecutorDispatcher
+    val networkDispatcher: CoroutineDispatcher = networkIO().asCoroutineDispatcher()
+    @UsesExecutorDispatcher
+    val mainDispatcher: CoroutineDispatcher get() = Dispatchers.Main
+
     fun diskIO(): Executor {
         return diskIO
     }
@@ -46,3 +58,10 @@ open class AppExecutors(
         }
     }
 }
+
+@RequiresOptIn(
+    message = "Use of executor dispatcher. Consider using a built in dispatcher.",
+    level = RequiresOptIn.Level.WARNING,
+)
+@Retention(AnnotationRetention.BINARY)
+annotation class UsesExecutorDispatcher

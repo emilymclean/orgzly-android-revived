@@ -16,11 +16,6 @@ import com.orgzly.android.ui.CommonActivity;
 import com.orgzly.android.ui.CommonActivityLifecycleCallbacks;
 import com.orgzly.android.ui.settings.SettingsFragment;
 
-import org.jetbrains.annotations.Nullable;
-
-import kotlinx.coroutines.CoroutineScope;
-import kotlinx.coroutines.Dispatchers;
-
 public class App extends Application {
     private static Context context;
 
